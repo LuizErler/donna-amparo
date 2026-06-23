@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/login_page.dart';
 import 'features/home/home_page.dart';
 import 'features/medicamentos/medicamentos_page.dart';
 import 'features/consultas/consultas_page.dart';
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: mode,
-        home: const MainNavigation(),
+        home: const LoginPage(),
       ),
     );
   }
