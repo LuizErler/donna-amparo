@@ -1,5 +1,5 @@
 class AppConfig {
   /// false = modo demo (entra direto ao clicar).
   /// true = autenticacao real via Supabase.
-  static const bool enableAuth = false;
+  static const bool enableAuth = true;
 }

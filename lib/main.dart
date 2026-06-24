@@ -19,9 +19,13 @@ const supabaseKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (AppConfig.enableAuth &&
-      supabaseUrl.isNotEmpty &&
-      supabaseKey.isNotEmpty) {
+  if (AppConfig.enableAuth) {
+    if (supabaseUrl.isEmpty || supabaseKey.isEmpty) {
+      throw Exception(
+        'Credenciais Supabase nao configuradas.\n'
+        'Rode com: flutter run --dart-define-from-file=dart_defines.local.json',
+      );
+    }
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseKey,
