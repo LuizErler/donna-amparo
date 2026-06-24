@@ -24,6 +24,9 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
+      - name: Criar .env para build
+        run: echo "" > .env
+
       - name: Build Web
         run: |
           flutter build web --release --base-href /donna-amparo/ \
