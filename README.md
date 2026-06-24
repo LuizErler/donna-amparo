@@ -89,6 +89,126 @@ O app suporta **modo claro** e **modo escuro** com paleta adaptada, acessivel na
 
 ---
 
+
+DER:
+
+DerDiagram
+    auth_users {
+        uuid id PK
+        text email
+    }
+
+    profiles {
+        uuid id PK,FK
+        text full_name
+        text email
+        text phone
+        text avatar_url
+        timestamptz created_at
+        timestamptz last_seen_at
+    }
+
+    patients {
+        uuid id PK
+        text full_name
+        date date_of_birth
+        text blood_type
+        text allergies
+        text primary_diagnosis
+        text emergency_contact
+        uuid created_by FK
+        timestamptz created_at
+    }
+
+    care_teams {
+        bigint id PK
+        uuid profile_id FK
+        uuid patient_id FK
+        text role
+        uuid invited_by FK
+        timestamptz accepted_at
+        timestamptz created_at
+    }
+
+    medications {
+        bigint id PK
+        uuid patient_id FK
+        text name
+        text dosage
+        text frequency
+        time[] schedule_time
+        date start_date
+        date end_date
+        text instructions
+        uuid created_by FK
+        timestamptz created_at
+    }
+
+    medication_logs {
+        uuid id PK
+        bigint medication_id FK
+        uuid patient_id FK
+        boolean taken
+        text skipped_reason
+        timestamptz taken_at
+        uuid taken_by FK
+        text notes
+        timestamptz created_at
+    }
+
+    vital_signs {
+        bigint id PK
+        uuid patient_id FK
+        text type
+        text value
+        text unit
+        text notes
+        uuid recorded_by FK
+        timestamptz recorded_at
+    }
+
+    appointments {
+        bigint id PK
+        uuid patient_id FK
+        text title
+        text doctor
+        text specialty
+        text location
+        timestamptz appointment_date
+        text visit_type
+        text notes
+        boolean reminder_24h
+        boolean notify_team
+        uuid created_by FK
+        timestamptz created_at
+    }
+
+    activity_logs {
+        bigint id PK
+        uuid patient_id FK
+        uuid profile_id FK
+        text type
+        text title
+        text subtitle
+        text notes
+        timestamptz created_at
+    }
+
+    auth_users ||--|| profiles : "1:1"
+    profiles ||--o{ care_teams : "profile_id"
+    profiles ||--o{ activity_logs : "profile_id"
+    profiles ||--o{ patients : "created_by"
+    patients ||--o{ care_teams : "patient_id"
+    patients ||--o{ medications : "patient_id"
+    patients ||--o{ medication_logs : "patient_id"
+    patients ||--o{ vital_signs : "patient_id"
+    patients ||--o{ appointments : "patient_id"
+    patients ||--o{ activity_logs : "patient_id"
+    medications ||--o{ medication_logs : "medication_id"
+    profiles ||--o{ medication_logs : "taken_by"
+    profiles ||--o{ vital_signs : "recorded_by"
+
+
 ## Licenca
 
 MIT © 2026 Donna Amparo
