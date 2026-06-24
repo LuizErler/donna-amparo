@@ -24,6 +24,9 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
+      - name: Criar .env vazio para o asset bundler
+        run: echo "" > .env
+
       - name: Criar dart-defines.json com credenciais
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
