@@ -89,124 +89,117 @@ O app suporta **modo claro** e **modo escuro** com paleta adaptada, acessivel na
 
 ---
 
+## Diagrama Entidade-Relacionamento
 
-DER:
-
-DerDiagram
-    auth_users {
+```mermaid
+erDiagram
+    AUTH_USERS {
         uuid id PK
-        text email
+        string email
     }
-
-    profiles {
-        uuid id PK,FK
-        text full_name
-        text email
-        text phone
-        text avatar_url
-        timestamptz created_at
-        timestamptz last_seen_at
-    }
-
-    patients {
+    PROFILES {
         uuid id PK
-        text full_name
+        string full_name
+        string email
+        string phone
+        string avatar_url
+        datetime created_at
+        datetime last_seen_at
+    }
+    PATIENTS {
+        uuid id PK
+        string full_name
         date date_of_birth
-        text blood_type
-        text allergies
-        text primary_diagnosis
-        text emergency_contact
+        string blood_type
+        string allergies
+        string primary_diagnosis
+        string emergency_contact
         uuid created_by FK
-        timestamptz created_at
+        datetime created_at
     }
-
-    care_teams {
-        bigint id PK
+    CARE_TEAMS {
+        int id PK
         uuid profile_id FK
         uuid patient_id FK
-        text role
+        string role
         uuid invited_by FK
-        timestamptz accepted_at
-        timestamptz created_at
+        datetime accepted_at
+        datetime created_at
     }
-
-    medications {
-        bigint id PK
+    MEDICATIONS {
+        int id PK
         uuid patient_id FK
-        text name
-        text dosage
-        text frequency
-        time[] schedule_time
+        string name
+        string dosage
+        string frequency
+        string schedule_time
         date start_date
         date end_date
-        text instructions
+        string instructions
         uuid created_by FK
-        timestamptz created_at
+        datetime created_at
     }
-
-    medication_logs {
+    MEDICATION_LOGS {
         uuid id PK
-        bigint medication_id FK
+        int medication_id FK
         uuid patient_id FK
         boolean taken
-        text skipped_reason
-        timestamptz taken_at
+        string skipped_reason
+        datetime taken_at
         uuid taken_by FK
-        text notes
-        timestamptz created_at
+        string notes
+        datetime created_at
     }
-
-    vital_signs {
-        bigint id PK
+    VITAL_SIGNS {
+        int id PK
         uuid patient_id FK
-        text type
-        text value
-        text unit
-        text notes
+        string type
+        string value
+        string unit
+        string notes
         uuid recorded_by FK
-        timestamptz recorded_at
+        datetime recorded_at
     }
-
-    appointments {
-        bigint id PK
+    APPOINTMENTS {
+        int id PK
         uuid patient_id FK
-        text title
-        text doctor
-        text specialty
-        text location
-        timestamptz appointment_date
-        text visit_type
-        text notes
+        string title
+        string doctor
+        string specialty
+        string location
+        datetime appointment_date
+        string visit_type
+        string notes
         boolean reminder_24h
         boolean notify_team
         uuid created_by FK
-        timestamptz created_at
+        datetime created_at
     }
-
-    activity_logs {
-        bigint id PK
+    ACTIVITY_LOGS {
+        int id PK
         uuid patient_id FK
         uuid profile_id FK
-        text type
-        text title
-        text subtitle
-        text notes
-        timestamptz created_at
+        string type
+        string title
+        string subtitle
+        string notes
+        datetime created_at
     }
 
-    auth_users ||--|| profiles : "1:1"
-    profiles ||--o{ care_teams : "profile_id"
-    profiles ||--o{ activity_logs : "profile_id"
-    profiles ||--o{ patients : "created_by"
-    patients ||--o{ care_teams : "patient_id"
-    patients ||--o{ medications : "patient_id"
-    patients ||--o{ medication_logs : "patient_id"
-    patients ||--o{ vital_signs : "patient_id"
-    patients ||--o{ appointments : "patient_id"
-    patients ||--o{ activity_logs : "patient_id"
-    medications ||--o{ medication_logs : "medication_id"
-    profiles ||--o{ medication_logs : "taken_by"
-    profiles ||--o{ vital_signs : "recorded_by"
+    AUTH_USERS ||--|| PROFILES : "1-1"
+    PROFILES ||--o{ CARE_TEAMS : "profile_id"
+    PROFILES ||--o{ ACTIVITY_LOGS : "profile_id"
+    PROFILES ||--o{ PATIENTS : "created_by"
+    PATIENTS ||--o{ CARE_TEAMS : "patient_id"
+    PATIENTS ||--o{ MEDICATIONS : "patient_id"
+    PATIENTS ||--o{ MEDICATION_LOGS : "patient_id"
+    PATIENTS ||--o{ VITAL_SIGNS : "patient_id"
+    PATIENTS ||--o{ APPOINTMENTS : "patient_id"
+    PATIENTS ||--o{ ACTIVITY_LOGS : "patient_id"
+    MEDICATIONS ||--o{ MEDICATION_LOGS : "medication_id"
+    PROFILES ||--o{ MEDICATION_LOGS : "taken_by"
+    PROFILES ||--o{ VITAL_SIGNS : "recorded_by"
+```
 
 
 ## Licenca
