@@ -24,13 +24,22 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
-      - name: Criar .env com credenciais
+      - name: Criar dart-defines.json com credenciais
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          python3 -c "
+          import json, os
+          with open('dart_defines.json', 'w') as f:
+              json.dump({
+                  'SUPABASE_URL': os.environ['SUPABASE_URL'],
+                  'SUPABASE_ANON_KEY': os.environ['SUPABASE_ANON_KEY']
+              }, f)
+          "
 
       - name: Build Web
-        run: flutter build web --release --base-href /donna-amparo/
+        run: flutter build web --release --base-href /donna-amparo/ --dart-define-from-file=dart_defines.json
 
       - name: Deploy para GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
