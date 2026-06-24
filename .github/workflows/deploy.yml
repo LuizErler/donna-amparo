@@ -24,17 +24,13 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
-      - name: Criar .env para build
-        run: echo "" > .env
+      - name: Criar .env com credenciais
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
       - name: Build Web
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          flutter build web --release --base-href /donna-amparo/ \
-            "--dart-define=SUPABASE_URL=$SUPABASE_URL" \
-            "--dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
+        run: flutter build web --release --base-href /donna-amparo/
 
       - name: Deploy para GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
