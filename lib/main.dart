@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/login_page.dart';
@@ -12,21 +11,18 @@ import 'features/alertas/alertas_page.dart';
 // Notifier global para controlar o tema — acessivel em qualquer tela
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
-// Valores embutidos em tempo de compilacao via --dart-define-from-file (CI)
-const _compiledUrl = String.fromEnvironment('SUPABASE_URL');
-const _compiledKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+// Credenciais embutidas em tempo de compilacao via --dart-define-from-file
+const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+const supabaseKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  String supabaseUrl = _compiledUrl;
-  String supabaseKey = _compiledKey;
-
-  // Em dev local, le do .env quando nao ha valores compilados
   if (supabaseUrl.isEmpty || supabaseKey.isEmpty) {
-    await dotenv.load(fileName: '.env', isOptional: true);
-    supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-    supabaseKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+    throw Exception(
+      'Credenciais Supabase nao configuradas.\n'
+      'Rode com: flutter run --dart-define-from-file=dart_defines.local.json',
+    );
   }
 
   await Supabase.initialize(

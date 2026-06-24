@@ -44,5 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Variaveis de ambiente — NAO subir no GitHub
+# Credenciais locais — NAO subir no GitHub
 .env
+dart_defines.local.json
+dart_defines.json
