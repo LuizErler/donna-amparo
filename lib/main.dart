@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/login_page.dart';
 import 'features/home/home_page.dart';
@@ -18,17 +19,14 @@ const supabaseKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (supabaseUrl.isEmpty || supabaseKey.isEmpty) {
-    throw Exception(
-      'Credenciais Supabase nao configuradas.\n'
-      'Rode com: flutter run --dart-define-from-file=dart_defines.local.json',
+  if (AppConfig.enableAuth &&
+      supabaseUrl.isNotEmpty &&
+      supabaseKey.isNotEmpty) {
+    await Supabase.initialize(
+      url: supabaseUrl,
+      anonKey: supabaseKey,
     );
   }
-
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseKey,
-  );
 
   runApp(const MyApp());
 }

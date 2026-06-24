@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/config/app_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/supabase/supabase_config.dart';
 import '../../main.dart';
@@ -30,9 +31,20 @@ class _CadastroPageState extends State<CadastroPage> {
   }
 
   void _cadastrar() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (AppConfig.enableAuth && !_formKey.currentState!.validate()) return;
 
     setState(() => _carregando = true);
+
+    if (!AppConfig.enableAuth) {
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (!mounted) return;
+      setState(() => _carregando = false);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+      );
+      return;
+    }
 
     try {
       final response = await supabase.auth.signUp(
