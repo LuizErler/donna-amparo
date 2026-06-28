@@ -21,13 +21,19 @@ class FamiliaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Circulo Familiar'),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context),
+              Text(
+                'Quem esta acompanhando o Sr. Joaquim.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               const SizedBox(height: 24),
               _buildCardConvite(context),
               const SizedBox(height: 28),
@@ -38,22 +44,6 @@ class FamiliaPage extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Cuidando de Sr. Joaquim',
-            style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 4),
-        Text('Circulo Familiar',
-            style: Theme.of(context).textTheme.headlineLarge),
-        const SizedBox(height: 2),
-        Text('Quem esta acompanhando o Sr. Joaquim.',
-            style: Theme.of(context).textTheme.bodyMedium),
-      ],
     );
   }
 

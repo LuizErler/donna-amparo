@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../shell/shell_page_header.dart';
 
 class AlertasPage extends StatefulWidget {
   const AlertasPage({super.key});
@@ -112,18 +113,9 @@ class _AlertasPageState extends State<AlertasPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Cuidando de Sr. Joaquim',
-            style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 4),
-        Text('Alertas da Familia',
-            style: Theme.of(context).textTheme.headlineLarge),
-        const SizedBox(height: 2),
-        Text('Pendencias e itens resolvidos.',
-            style: Theme.of(context).textTheme.bodyMedium),
-      ],
+    return const ShellPageHeader(
+      title: 'Alertas da Familia',
+      subtitle: 'Pendencias e itens resolvidos.',
     );
   }
 

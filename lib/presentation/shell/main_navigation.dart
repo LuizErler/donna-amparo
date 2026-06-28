@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../features/alertas/alertas_page.dart';
+import '../features/calendario/calendario_page.dart';
 import '../features/consultas/consultas_page.dart';
-import '../features/familia/familia_page.dart';
 import '../features/home/home_page.dart';
 import '../features/medicamentos/medicamentos_page.dart';
 
@@ -20,7 +20,7 @@ class _MainNavigationState extends State<MainNavigation> {
     HomePage(),
     MedicamentosPage(),
     ConsultasPage(),
-    FamiliaPage(),
+    CalendarioPage(),
     AlertasPage(),
   ];
 
@@ -32,12 +32,12 @@ class _MainNavigationState extends State<MainNavigation> {
         activeIcon: Icons.medication),
     _NavItem(
         label: 'Consultas',
-        icon: Icons.calendar_today_outlined,
-        activeIcon: Icons.calendar_today),
+        icon: Icons.medical_services_outlined,
+        activeIcon: Icons.medical_services),
     _NavItem(
-        label: 'Familia',
-        icon: Icons.people_outline,
-        activeIcon: Icons.people),
+        label: 'Calendario',
+        icon: Icons.calendar_month_outlined,
+        activeIcon: Icons.calendar_month),
     _NavItem(
         label: 'Alertas',
         icon: Icons.notifications_outlined,
@@ -52,6 +52,7 @@ class _MainNavigationState extends State<MainNavigation> {
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
         items: _navItems

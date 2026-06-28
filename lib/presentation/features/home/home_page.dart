@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
-import '../configuracoes/configuracoes_page.dart';
+import '../../shell/shell_page_header.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -31,45 +31,9 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Cuidando de Sr. Joaquim',
-                  style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 4),
-              Text('Bom dia, Karina',
-                  style: Theme.of(context).textTheme.headlineLarge),
-              const SizedBox(height: 2),
-              Text('Veja como esta o dia do Sr. Joaquim.',
-                  style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => const ConfiguracoesPage()),
-          ),
-          child: CircleAvatar(
-            radius: 22,
-            backgroundColor: AppTheme.primary,
-            child: const Text(
-              'K',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-          ),
-        ),
-      ],
+    return const ShellPageHeader(
+      title: 'Bom dia, Karina',
+      subtitle: 'Veja como esta o dia do Sr. Joaquim.',
     );
   }
 
@@ -321,11 +285,14 @@ class HomePage extends StatelessWidget {
           children: [
             Text('Pendencias da familia',
                 style: Theme.of(context).textTheme.titleMedium),
-            Text('Ver tudo',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w600,
-                    )),
+            GestureDetector(
+              onTap: () => openCirculoFamiliar(context),
+              child: Text('Ver tudo',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w600,
+                      )),
+            ),
           ],
         ),
         const SizedBox(height: 12),

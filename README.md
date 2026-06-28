@@ -11,9 +11,9 @@ Donna Amparo e um aplicativo mobile e web desenvolvido em Flutter, voltado para 
 - **Inicio** — Visao geral do dia: proximo medicamento, progresso de hidratacao, proxima consulta e pendencias da familia
 - **Medicamentos** — Lista de doses organizada por periodo (Manha / Tarde / Noite) com confirmacao interativa e barra de progresso diaria
 - **Consultas** — Agenda medica com proximas consultas em destaque e historico completo com anotacoes medicas
-- **Familia** — Circulo familiar com membros, papeis (cuidador, observador) e feed de atividades em tempo real
+- **Calendario** — Visao mensal agregando consultas, horarios de medicamentos e outros compromissos
 - **Alertas** — Pendencias e itens resolvidos com filtros por categoria (Medicamentos, Consultas, Vitais, Hidratacao, Familia)
-- **Configuracoes** — Perfil do usuario, alternancia de tema (claro / escuro / sistema) e preferencias gerais
+- **Perfil** (menu superior) — Dados do cuidador, circulo familiar, notificacoes, privacidade e preferencias de sistema (tema claro / escuro)
 
 ---
 

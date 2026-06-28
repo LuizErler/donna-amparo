@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../shell/shell_page_header.dart';
 
 class ConsultasPage extends StatelessWidget {
   const ConsultasPage({super.key});
@@ -66,17 +67,9 @@ class ConsultasPage extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Cuidando de Sr. Joaquim',
-            style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 4),
-        Text('Consultas', style: Theme.of(context).textTheme.headlineLarge),
-        const SizedBox(height: 2),
-        Text('Agenda medica e historico.',
-            style: Theme.of(context).textTheme.bodyMedium),
-      ],
+    return const ShellPageHeader(
+      title: 'Consultas',
+      subtitle: 'Agenda medica e historico.',
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../shell/shell_page_header.dart';
 
 class MedicamentosPage extends StatefulWidget {
   const MedicamentosPage({super.key});
@@ -67,18 +68,9 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Cuidando de Sr. Joaquim',
-            style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 4),
-        Text('Medicamentos',
-            style: Theme.of(context).textTheme.headlineLarge),
-        const SizedBox(height: 2),
-        Text('Doses do dia e confirmacoes.',
-            style: Theme.of(context).textTheme.bodyMedium),
-      ],
+    return const ShellPageHeader(
+      title: 'Medicamentos',
+      subtitle: 'Doses do dia e confirmacoes.',
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../shell/shell_page_header.dart';
 
 class ConfiguracoesPage extends ConsumerStatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -20,7 +21,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configuracoes'),
+        title: const Text('Perfil'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -102,6 +103,16 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                   color: Theme.of(context).textTheme.bodyMedium?.color),
             ],
           ),
+        ),
+        const SizedBox(height: 10),
+        _buildItem(
+          context,
+          cardColor: cardColor,
+          borderColor: borderColor,
+          icone: Icons.people_outline,
+          titulo: 'Circulo familiar',
+          subtitulo: 'Membros, convites e papeis',
+          onTap: () => openCirculoFamiliar(context),
         ),
         const SizedBox(height: 10),
         _buildItem(
