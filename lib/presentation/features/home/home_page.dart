@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../configuracoes/configuracoes_page.dart';
 
 class HomePage extends StatelessWidget {

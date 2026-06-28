@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import '../../main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ConfiguracoesPage extends StatefulWidget {
+import '../../../core/providers/theme_provider.dart';
+import '../../../core/theme/app_theme.dart';
+
+class ConfiguracoesPage extends ConsumerStatefulWidget {
   const ConfiguracoesPage({super.key});
 
   @override
-  State<ConfiguracoesPage> createState() => _ConfiguracoesPageState();
+  ConsumerState<ConfiguracoesPage> createState() => _ConfiguracoesPageState();
 }
 
-class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
+class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -141,9 +143,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
           child: Column(
             children: [
               // Toggle Dark Mode
-              ValueListenableBuilder<ThemeMode>(
-                valueListenable: themeNotifier,
-                builder: (_, mode, __) {
+              Consumer(
+                builder: (context, ref, _) {
+                  final mode = ref.watch(themeModeProvider);
                   final isManualDark = mode == ThemeMode.dark;
                   final isManualLight = mode == ThemeMode.light;
                   final isSystem = mode == ThemeMode.system;
@@ -202,8 +204,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                               context,
                               label: 'Sistema',
                               selecionado: isSystem,
-                              onTap: () => themeNotifier.value =
-                                  ThemeMode.system,
+                              onTap: () => ref
+                                  .read(themeModeProvider.notifier)
+                                  .state = ThemeMode.system,
                             ),
                             const SizedBox(width: 8),
                             _buildThemeChip(
@@ -211,8 +214,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                               label: 'Claro',
                               icone: Icons.light_mode,
                               selecionado: isManualLight,
-                              onTap: () => themeNotifier.value =
-                                  ThemeMode.light,
+                              onTap: () => ref
+                                  .read(themeModeProvider.notifier)
+                                  .state = ThemeMode.light,
                             ),
                             const SizedBox(width: 8),
                             _buildThemeChip(
@@ -220,8 +224,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                               label: 'Escuro',
                               icone: Icons.dark_mode,
                               selecionado: isManualDark,
-                              onTap: () => themeNotifier.value =
-                                  ThemeMode.dark,
+                              onTap: () => ref
+                                  .read(themeModeProvider.notifier)
+                                  .state = ThemeMode.dark,
                             ),
                           ],
                         ),

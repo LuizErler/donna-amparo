@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/config/app_config.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/supabase/supabase_config.dart';
-import '../../main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CadastroPage extends StatefulWidget {
-  const CadastroPage({super.key});
+import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_theme.dart';
+import '../providers/auth_providers.dart';
+import '../../shell/main_navigation.dart';
+
+class SignupScreen extends ConsumerStatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<CadastroPage> createState() => _CadastroPageState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _CadastroPageState extends State<CadastroPage> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _confirmarSenhaController = TextEditingController();
   bool _senhaVisivel = false;
-  bool _carregando = false;
 
   @override
   void dispose() {
@@ -30,62 +30,51 @@ class _CadastroPageState extends State<CadastroPage> {
     super.dispose();
   }
 
-  void _cadastrar() async {
+  Future<void> _cadastrar() async {
     if (AppConfig.enableAuth && !_formKey.currentState!.validate()) return;
-
-    setState(() => _carregando = true);
 
     if (!AppConfig.enableAuth) {
       await Future.delayed(const Duration(milliseconds: 400));
       if (!mounted) return;
-      setState(() => _carregando = false);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
-      );
+      _goToHome();
       return;
     }
 
-    try {
-      final response = await supabase.auth.signUp(
-        email: _emailController.text.trim(),
-        password: _senhaController.text,
-        data: {'nome': _nomeController.text.trim()},
-      );
-
-      if (!mounted) return;
-
-      if (response.user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainNavigation()),
+    final error = await ref.read(authControllerProvider.notifier).signUp(
+          email: _emailController.text.trim(),
+          password: _senhaController.text,
+          fullName: _nomeController.text.trim(),
         );
-      }
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro ao criar conta. Tente novamente.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _carregando = false);
+
+    if (!mounted) return;
+    if (error != null) {
+      _showError(error);
+      return;
     }
+    _goToHome();
+  }
+
+  void _goToHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const MainNavigation()),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authControllerProvider);
+    final isLoading = authState.isLoading;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
     final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
@@ -172,7 +161,7 @@ class _CadastroPageState extends State<CadastroPage> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: _carregando ? null : _cadastrar,
+                    onPressed: isLoading ? null : _cadastrar,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       foregroundColor: Colors.white,
@@ -182,7 +171,7 @@ class _CadastroPageState extends State<CadastroPage> {
                           borderRadius: BorderRadius.circular(14)),
                       elevation: 0,
                     ),
-                    child: _carregando
+                    child: isLoading
                         ? const SizedBox(
                             width: 22,
                             height: 22,
@@ -321,8 +310,7 @@ class _CadastroPageState extends State<CadastroPage> {
       hintStyle: Theme.of(context).textTheme.bodyMedium,
       filled: true,
       fillColor: cardColor,
-      prefixIcon:
-          Icon(icone, color: AppTheme.textSecondary, size: 20),
+      prefixIcon: Icon(icone, color: AppTheme.textSecondary, size: 20),
       suffixIcon: sufixo,
       border: border,
       enabledBorder: border,

@@ -9,6 +9,24 @@
       "args": [
         "--dart-define-from-file=dart_defines.local.json"
       ]
+    },
+    {
+      "name": "Donna Amparo (Android)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define-from-file=dart_defines.local.json"
+      ]
+    },
+    {
+      "name": "Donna Amparo (Windows)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define-from-file=dart_defines.local.json"
+      ]
     }
   ]
 }

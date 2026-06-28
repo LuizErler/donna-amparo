@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/config/app_config.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/supabase/supabase_config.dart';
-import '../auth/cadastro_page.dart';
-import '../../main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_theme.dart';
+import '../providers/auth_providers.dart';
+import 'signup_screen.dart';
+import '../../shell/main_navigation.dart';
+
+class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   bool _senhaVisivel = false;
-  bool _carregando = false;
 
   @override
   void dispose() {
@@ -27,58 +27,50 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _entrar() async {
+  Future<void> _entrar() async {
     if (AppConfig.enableAuth && !_formKey.currentState!.validate()) return;
-
-    setState(() => _carregando = true);
 
     if (!AppConfig.enableAuth) {
       await Future.delayed(const Duration(milliseconds: 400));
       if (!mounted) return;
-      setState(() => _carregando = false);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
-      );
+      _goToHome();
       return;
     }
 
-    try {
-      await supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _senhaController.text,
-      );
+    final error = await ref.read(authControllerProvider.notifier).signIn(
+          email: _emailController.text.trim(),
+          password: _senhaController.text,
+        );
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
-      );
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro inesperado. Tente novamente.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _carregando = false);
+    if (!mounted) return;
+    if (error != null) {
+      _showError(error);
+      return;
     }
+    _goToHome();
+  }
+
+  void _goToHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const MainNavigation()),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authControllerProvider);
+    final isLoading = authState.isLoading;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
     final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
@@ -101,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 12),
                 _buildEsqueciSenha(context),
                 const SizedBox(height: 28),
-                _buildBotaoEntrar(context),
+                _buildBotaoEntrar(context, isLoading),
                 const SizedBox(height: 24),
                 _buildDivisor(context),
                 const SizedBox(height: 24),
@@ -291,12 +283,12 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildBotaoEntrar(BuildContext context) {
+  Widget _buildBotaoEntrar(BuildContext context, bool isLoading) {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: _carregando ? null : _entrar,
+        onPressed: isLoading ? null : _entrar,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primary,
           foregroundColor: Colors.white,
@@ -305,7 +297,7 @@ class _LoginPageState extends State<LoginPage> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,
         ),
-        child: _carregando
+        child: isLoading
             ? const SizedBox(
                 width: 22,
                 height: 22,
@@ -326,8 +318,7 @@ class _LoginPageState extends State<LoginPage> {
         Expanded(child: Divider(color: AppTheme.cardBorder)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text('ou',
-              style: Theme.of(context).textTheme.bodyMedium),
+          child: Text('ou', style: Theme.of(context).textTheme.bodyMedium),
         ),
         Expanded(child: Divider(color: AppTheme.cardBorder)),
       ],
@@ -371,7 +362,7 @@ class _LoginPageState extends State<LoginPage> {
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const CadastroPage()),
+          MaterialPageRoute(builder: (_) => const SignupScreen()),
         ),
         child: RichText(
           text: TextSpan(
