@@ -1,13 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:donna_amparo/app.dart';
+import 'package:donna_amparo/presentation/auth/screens/login_screen.dart';
 
 void main() {
-  testWidgets('App exibe tela de login', (WidgetTester tester) async {
+  testWidgets('Login exibe titulo e botao Entrar', (WidgetTester tester) async {
     await tester.pumpWidget(
       const ProviderScope(
-        child: DonnaAmparoApp(),
+        child: MaterialApp(
+          home: LoginScreen(),
+        ),
       ),
     );
 

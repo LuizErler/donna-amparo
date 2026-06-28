@@ -5,7 +5,6 @@ import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_providers.dart';
 import 'signup_screen.dart';
-import '../../shell/main_navigation.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -32,8 +31,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!AppConfig.enableAuth) {
       await Future.delayed(const Duration(milliseconds: 400));
-      if (!mounted) return;
-      _goToHome();
       return;
     }
 
@@ -47,14 +44,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _showError(error);
       return;
     }
-    _goToHome();
-  }
-
-  void _goToHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-    );
   }
 
   void _showError(String message) {

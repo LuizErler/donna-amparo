@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/config/app_config.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../data/auth/datasources/auth_remote_datasource.dart';
 import '../../../data/auth/repositories/auth_repository_impl.dart';
 import '../../../domain/auth/repositories/auth_repository.dart';
@@ -21,6 +23,25 @@ final signInUseCaseProvider = Provider<SignIn>((ref) {
 
 final signUpUseCaseProvider = Provider<SignUp>((ref) {
   return SignUp(ref.watch(authRepositoryProvider));
+});
+
+/// Emite true quando ha sessao Supabase valida (persistida entre aberturas do app).
+final authSessionProvider = StreamProvider<bool>((ref) {
+  if (!AppConfig.enableAuth) {
+    return Stream.value(true);
+  }
+
+  final auth = supabase.auth;
+
+  return Stream.multi((controller) {
+    controller.add(auth.currentSession != null);
+
+    final subscription = auth.onAuthStateChange.listen((event) {
+      controller.add(event.session != null);
+    });
+
+    controller.onCancel = () => subscription.cancel();
+  });
 });
 
 final authControllerProvider =

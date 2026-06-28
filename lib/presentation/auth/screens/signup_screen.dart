@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_providers.dart';
-import '../../shell/main_navigation.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -35,8 +34,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     if (!AppConfig.enableAuth) {
       await Future.delayed(const Duration(milliseconds: 400));
-      if (!mounted) return;
-      _goToHome();
       return;
     }
 
@@ -51,14 +48,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       _showError(error);
       return;
     }
-    _goToHome();
-  }
-
-  void _goToHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-    );
   }
 
   void _showError(String message) {

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/providers/theme_provider.dart';
 import 'core/theme/app_theme.dart';
-import 'presentation/auth/screens/login_screen.dart';
+import 'presentation/auth/auth_gate.dart';
 
 class DonnaAmparoApp extends ConsumerWidget {
   const DonnaAmparoApp({super.key});
@@ -26,7 +26,7 @@ class DonnaAmparoApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const LoginScreen(),
+      home: const AuthGate(),
     );
   }
 }
