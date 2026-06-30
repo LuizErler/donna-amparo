@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/configuracoes/configuracoes_page.dart';
 import '../features/familia/familia_page.dart';
 import '../../core/theme/app_theme.dart';
+import '../care/providers/care_providers.dart';
 
 /// Avatar do menu superior — abre o hub Perfil.
-class ProfileAvatarButton extends StatelessWidget {
-  const ProfileAvatarButton({super.key, this.initials = 'K'});
+class ProfileAvatarButton extends ConsumerWidget {
+  const ProfileAvatarButton({super.key, this.initials});
 
-  final String initials;
+  final String? initials;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final careAsync = ref.watch(careContextProvider);
+    final String displayInitials = initials ??
+        careAsync.maybeWhen(
+          data: (ctx) => ctx.profileInitials,
+          orElse: () => '?',
+        );
+
     return GestureDetector(
       onTap: () => openPerfil(context),
       child: CircleAvatar(
         radius: 22,
         backgroundColor: AppTheme.primary,
         child: Text(
-          initials,
+          displayInitials,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -31,22 +40,29 @@ class ProfileAvatarButton extends StatelessWidget {
 }
 
 /// Cabecalho padrao das abas principais (contexto + titulo + avatar Perfil).
-class ShellPageHeader extends StatelessWidget {
+class ShellPageHeader extends ConsumerWidget {
   const ShellPageHeader({
     super.key,
     required this.title,
     this.subtitle,
-    this.contextLabel = 'Cuidando de Sr. Joaquim',
+    this.contextLabel,
     this.showProfileButton = true,
   });
 
   final String title;
   final String? subtitle;
-  final String contextLabel;
+  final String? contextLabel;
   final bool showProfileButton;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final careAsync = ref.watch(careContextProvider);
+    final String resolvedContext = contextLabel ??
+        careAsync.maybeWhen(
+          data: (ctx) => ctx.contextLabel,
+          orElse: () => 'Carregando contexto...',
+        );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -54,7 +70,8 @@ class ShellPageHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(contextLabel, style: Theme.of(context).textTheme.bodyMedium),
+              Text(resolvedContext,
+                  style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 4),
               Text(title, style: Theme.of(context).textTheme.headlineLarge),
               if (subtitle != null) ...[

@@ -11,4 +11,6 @@ abstract class AuthRepository {
   });
 
   bool get isAuthenticated;
+
+  Future<void> signOut();
 }

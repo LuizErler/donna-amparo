@@ -29,4 +29,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   bool get isAuthenticated => _remote.hasSession;
+
+  @override
+  Future<void> signOut() => _remote.signOut();
 }

@@ -32,4 +32,6 @@ class AuthRemoteDataSource {
   }
 
   bool get hasSession => _client.auth.currentSession != null;
+
+  Future<void> signOut() => _client.auth.signOut();
 }
