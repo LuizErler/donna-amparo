@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/theme/app_theme.dart';
+import '../../../domain/care_team/entities/care_team_member.dart';
+import '../../care/invite/invite_member_sheet.dart';
+import '../../care/providers/care_providers.dart';
+import '../../care/providers/care_team_providers.dart';
 
-class FamiliaPage extends StatelessWidget {
+class FamiliaPage extends ConsumerWidget {
   const FamiliaPage({super.key});
-
-  static const List<_Membro> _membros = [
-    _Membro(iniciais: 'KM', nome: 'Karina Mendes', papel: 'Filha · Cuidadora principal', status: 'Ativa agora', isPrincipal: true, cor: Color(0xFFC1622A)),
-    _Membro(iniciais: 'RM', nome: 'Rafael Mendes', papel: 'Filho · Observador', status: 'Ha 2 horas', isPrincipal: false, cor: Color(0xFF7A5C44)),
-    _Membro(iniciais: 'LM', nome: 'Luiza Mendes', papel: 'Neta · Observadora', status: 'Ativa agora', isPrincipal: false, cor: Color(0xFF5C8A6E)),
-    _Membro(iniciais: 'DC', nome: 'Dona Cecilia', papel: 'Esposa · Cuidadora', status: 'Ontem as 21:40', isPrincipal: false, cor: Color(0xFF6B7A8D)),
-  ];
 
   static const List<_Atividade> _atividades = [
     _Atividade(autor: 'Karina', acao: 'registrou a pressao arterial (128 x 82)', hora: '14:30'),
@@ -19,35 +18,96 @@ class FamiliaPage extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final careAsync = ref.watch(careContextProvider);
+    final membersAsync = ref.watch(familyMembersProvider);
+    final roleAsync = ref.watch(currentCareRoleProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Circulo Familiar'),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Quem esta acompanhando o Sr. Joaquim.',
-                style: Theme.of(context).textTheme.bodyMedium,
+        child: careAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => _buildError(context, 'Erro ao carregar contexto.'),
+          data: (ctx) {
+            final patient = ctx.patient;
+            if (patient == null) {
+              return _buildError(context, 'Nenhum paciente vinculado.');
+            }
+
+            final canInvite = roleAsync.maybeWhen(
+              data: (role) => role?.canManageTeam ?? false,
+              orElse: () => false,
+            );
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quem esta acompanhando ${ctx.patientName}.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 24),
+                  if (canInvite)
+                    _buildCardConvite(context, ref, patient.id)
+                  else
+                    _buildConviteSomenteLeitura(context),
+                  const SizedBox(height: 28),
+                  membersAsync.when(
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    error: (_, _) => _buildError(context, 'Erro ao carregar membros.'),
+                    data: (members) => _buildMembros(context, members),
+                  ),
+                  const SizedBox(height: 28),
+                  _buildAtividade(context),
+                ],
               ),
-              const SizedBox(height: 24),
-              _buildCardConvite(context),
-              const SizedBox(height: 28),
-              _buildMembros(context),
-              const SizedBox(height: 28),
-              _buildAtividade(context),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildCardConvite(BuildContext context) {
+  Widget _buildError(BuildContext context, String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(message, textAlign: TextAlign.center),
+      ),
+    );
+  }
+
+  Widget _buildConviteSomenteLeitura(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardNormal,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Text(
+        'Somente o Cuidador Admin pode convidar novos membros.',
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+    );
+  }
+
+  Widget _buildCardConvite(
+    BuildContext context,
+    WidgetRef ref,
+    String patientId,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -72,10 +132,11 @@ class FamiliaPage extends StatelessWidget {
           Row(
             children: [
               OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () =>
+                    showInviteMemberSheet(context, ref, patientId: patientId),
                 icon: const Icon(Icons.person_add_outlined,
                     size: 14, color: Colors.white),
-                label: const Text('Convidar por e-mail',
+                label: const Text('Convidar membro',
                     style: TextStyle(color: Colors.white, fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.white54),
@@ -87,7 +148,8 @@ class FamiliaPage extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () =>
+                    showInviteMemberSheet(context, ref, patientId: patientId),
                 icon: const Icon(Icons.link, size: 14, color: Colors.white),
                 label: const Text('Copiar link',
                     style: TextStyle(color: Colors.white, fontSize: 13)),
@@ -106,21 +168,28 @@ class FamiliaPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMembros(BuildContext context) {
+  Widget _buildMembros(BuildContext context, List<CareTeamMember> members) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Membros', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
-        ..._membros.map((m) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _buildCardMembro(context, m),
-            )),
+        if (members.isEmpty)
+          Text('Nenhum membro encontrado.',
+              style: Theme.of(context).textTheme.bodyMedium)
+        else
+          ...members.map((m) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _buildCardMembro(context, m),
+              )),
       ],
     );
   }
 
-  Widget _buildCardMembro(BuildContext context, _Membro m) {
+  Widget _buildCardMembro(BuildContext context, CareTeamMember member) {
+    final color = _memberColor(member.profileId);
+    final status = member.isCurrentUser ? 'Voce' : 'Membro ativo';
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -132,8 +201,8 @@ class FamiliaPage extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundColor: m.cor,
-            child: Text(m.iniciais,
+            backgroundColor: color,
+            child: Text(member.initials,
                 style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -146,9 +215,11 @@ class FamiliaPage extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(m.nome,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    if (m.isPrincipal) ...[
+                    Expanded(
+                      child: Text(member.fullName,
+                          style: Theme.of(context).textTheme.titleMedium),
+                    ),
+                    if (member.isAdmin) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -157,7 +228,7 @@ class FamiliaPage extends StatelessWidget {
                           color: AppTheme.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text('PRINCIPAL',
+                        child: Text('ADMIN',
                             style: Theme.of(context)
                                 .textTheme
                                 .labelMedium
@@ -171,7 +242,7 @@ class FamiliaPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(m.papel,
+                Text(member.role.label,
                     style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 Row(
@@ -179,15 +250,13 @@ class FamiliaPage extends StatelessWidget {
                     Container(
                       width: 7,
                       height: 7,
-                      decoration: BoxDecoration(
-                        color: m.status.contains('agora')
-                            ? Colors.green
-                            : AppTheme.textSecondary,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 5),
-                    Text(m.status,
+                    Text(status,
                         style: Theme.of(context).textTheme.labelMedium),
                   ],
                 ),
@@ -199,12 +268,26 @@ class FamiliaPage extends StatelessWidget {
     );
   }
 
+  Color _memberColor(String profileId) {
+    const colors = [
+      Color(0xFFC1622A),
+      Color(0xFF7A5C44),
+      Color(0xFF5C8A6E),
+      Color(0xFF6B7A8D),
+      Color(0xFF8B6BAE),
+    ];
+    return colors[profileId.hashCode.abs() % colors.length];
+  }
+
   Widget _buildAtividade(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Atividade da familia',
             style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text('Em breve — feed em tempo real.',
+            style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: 12),
         ..._atividades.map((a) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -257,23 +340,6 @@ class FamiliaPage extends StatelessWidget {
       ],
     );
   }
-}
-
-class _Membro {
-  final String iniciais;
-  final String nome;
-  final String papel;
-  final String status;
-  final bool isPrincipal;
-  final Color cor;
-  const _Membro({
-    required this.iniciais,
-    required this.nome,
-    required this.papel,
-    required this.status,
-    required this.isPrincipal,
-    required this.cor,
-  });
 }
 
 class _Atividade {
