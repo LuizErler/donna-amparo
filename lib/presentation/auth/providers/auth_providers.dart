@@ -8,6 +8,7 @@ import '../../../data/auth/repositories/auth_repository_impl.dart';
 import '../../../domain/auth/repositories/auth_repository.dart';
 import '../../../domain/auth/usecases/sign_in.dart';
 import '../../../domain/auth/usecases/sign_up.dart';
+import '../../care/providers/care_providers.dart';
 
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
   return AuthRemoteDataSource();
@@ -49,6 +50,7 @@ final authControllerProvider =
   return AuthController(
     signIn: ref.watch(signInUseCaseProvider),
     signUp: ref.watch(signUpUseCaseProvider),
+    authRepository: ref.watch(authRepositoryProvider),
   );
 });
 
@@ -56,12 +58,15 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   AuthController({
     required SignIn signIn,
     required SignUp signUp,
+    required AuthRepository authRepository,
   })  : _signIn = signIn,
         _signUp = signUp,
+        _authRepository = authRepository,
         super(const AsyncValue.data(null));
 
   final SignIn _signIn;
   final SignUp _signUp;
+  final AuthRepository _authRepository;
 
   bool get isLoading => state.isLoading;
 
@@ -107,4 +112,29 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       return message;
     }
   }
+
+  Future<String?> signOut() async {
+    state = const AsyncValue.loading();
+    try {
+      await _authRepository.signOut();
+      state = const AsyncValue.data(null);
+      return null;
+    } on AuthException catch (e) {
+      state = AsyncValue.error(e.message, StackTrace.current);
+      return e.message;
+    } catch (_) {
+      const message = 'Erro ao encerrar sessao.';
+      state = AsyncValue.error(message, StackTrace.current);
+      return message;
+    }
+  }
+}
+
+/// Encerra sessao Supabase e limpa cache de perfil/paciente.
+Future<String?> performSignOut(WidgetRef ref) async {
+  final error = await ref.read(authControllerProvider.notifier).signOut();
+  ref.invalidate(currentProfileProvider);
+  ref.invalidate(activePatientProvider);
+  ref.invalidate(hasActivePatientProvider);
+  return error;
 }

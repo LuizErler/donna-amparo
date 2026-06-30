@@ -1,56 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
-import '../providers/auth_providers.dart';
+import '../../../domain/patient/repositories/patient_repository.dart';
+import '../providers/onboarding_providers.dart';
 
-class SignupScreen extends ConsumerStatefulWidget {
-  const SignupScreen({super.key});
+class PatientOnboardingScreen extends ConsumerStatefulWidget {
+  const PatientOnboardingScreen({super.key});
 
   @override
-  ConsumerState<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<PatientOnboardingScreen> createState() =>
+      _PatientOnboardingScreenState();
 }
 
-class _SignupScreenState extends ConsumerState<SignupScreen> {
+class _PatientOnboardingScreenState
+    extends ConsumerState<PatientOnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
-  final _confirmarSenhaController = TextEditingController();
-  bool _senhaVisivel = false;
+  final _alergiasController = TextEditingController();
+  final _emergenciaController = TextEditingController();
+  DateTime? _dataNascimento;
 
   @override
   void dispose() {
     _nomeController.dispose();
-    _emailController.dispose();
-    _senhaController.dispose();
-    _confirmarSenhaController.dispose();
+    _alergiasController.dispose();
+    _emergenciaController.dispose();
     super.dispose();
   }
 
-  Future<void> _cadastrar() async {
-    if (AppConfig.enableAuth && !_formKey.currentState!.validate()) return;
+  Future<void> _selecionarData() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dataNascimento ?? DateTime(now.year - 75),
+      firstDate: DateTime(1900),
+      lastDate: now,
+      locale: const Locale('pt', 'BR'),
+      helpText: 'Data de nascimento',
+    );
+    if (picked != null) {
+      setState(() => _dataNascimento = picked);
+    }
+  }
 
-    if (!AppConfig.enableAuth) {
-      await Future.delayed(const Duration(milliseconds: 400));
+  Future<void> _cadastrar() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_dataNascimento == null) {
+      _showError('Informe a data de nascimento.');
       return;
     }
 
-    final error = await ref.read(authControllerProvider.notifier).signUp(
-          email: _emailController.text.trim(),
-          password: _senhaController.text,
-          fullName: _nomeController.text.trim(),
+    final error = await ref.read(onboardingControllerProvider.notifier).submit(
+          CreatePatientInput(
+            fullName: _nomeController.text.trim(),
+            dateOfBirth: _dataNascimento!,
+            allergies: _alergiasController.text.trim().isEmpty
+                ? null
+                : _alergiasController.text.trim(),
+            emergencyContact: _emergenciaController.text.trim().isEmpty
+                ? null
+                : _emergenciaController.text.trim(),
+          ),
         );
 
     if (!mounted) return;
     if (error != null) {
       _showError(error);
-      return;
     }
-
-    // Volta ao AuthGate para exibir onboarding (sessao criada no signup).
-    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   void _showError(String message) {
@@ -63,90 +80,77 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
+  String _formatDate(DateTime date) {
+    final d = date.day.toString().padLeft(2, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    return '$d/$m/${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final isLoading = authState.isLoading;
+    final isLoading = ref.watch(onboardingControllerProvider).isLoading;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
     final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final dateLabel = _dataNascimento == null
+        ? 'Selecionar data'
+        : _formatDate(_dataNascimento!);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Criar conta',
+                Text('Cadastrar paciente',
                     style: Theme.of(context).textTheme.headlineLarge),
                 const SizedBox(height: 6),
-                Text('Junte-se ao Donna Amparo.',
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  'Quem voce vai acompanhar no Donna Amparo?',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 const SizedBox(height: 32),
                 _buildCampo(
                   context,
                   label: 'Nome completo',
-                  hint: 'Karina Mendes',
+                  hint: 'Ex.: Joaquim Silva',
                   controller: _nomeController,
                   icone: Icons.person_outline,
                   cardColor: cardColor,
                   borderColor: borderColor,
                   validator: (v) =>
-                      v == null || v.isEmpty ? 'Informe seu nome' : null,
+                      v == null || v.trim().isEmpty ? 'Informe o nome' : null,
+                ),
+                const SizedBox(height: 14),
+                _buildDataNascimento(
+                  context,
+                  label: dateLabel,
+                  cardColor: cardColor,
+                  borderColor: borderColor,
+                  onTap: _selecionarData,
                 ),
                 const SizedBox(height: 14),
                 _buildCampo(
                   context,
-                  label: 'E-mail',
-                  hint: 'seu@email.com',
-                  controller: _emailController,
-                  icone: Icons.email_outlined,
+                  label: 'Alergias conhecidas (opcional)',
+                  hint: 'Ex.: dipirona, amendoim',
+                  controller: _alergiasController,
+                  icone: Icons.warning_amber_outlined,
                   cardColor: cardColor,
                   borderColor: borderColor,
-                  tipoTeclado: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Informe o e-mail';
-                    if (!v.contains('@')) return 'E-mail invalido';
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 14),
-                _buildCampoSenha(
+                _buildCampo(
                   context,
-                  label: 'Senha',
-                  hint: '••••••••',
-                  controller: _senhaController,
+                  label: 'Contato de emergencia (opcional)',
+                  hint: 'Nome e telefone',
+                  controller: _emergenciaController,
+                  icone: Icons.phone_outlined,
                   cardColor: cardColor,
                   borderColor: borderColor,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Informe a senha';
-                    if (v.length < 6) return 'Minimo 6 caracteres';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-                _buildCampoSenha(
-                  context,
-                  label: 'Confirmar senha',
-                  hint: '••••••••',
-                  controller: _confirmarSenhaController,
-                  cardColor: cardColor,
-                  borderColor: borderColor,
-                  validator: (v) {
-                    if (v != _senhaController.text) {
-                      return 'As senhas nao conferem';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -168,39 +172,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2),
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
-                        : Text('Criar conta',
+                        : Text(
+                            'Concluir cadastro',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
-                                ?.copyWith(color: Colors.white)),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: 'Ja tem conta? ',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                                ?.copyWith(color: Colors.white),
                           ),
-                          TextSpan(
-                            text: 'Entrar',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: AppTheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -208,6 +190,49 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDataNascimento(
+    BuildContext context, {
+    required String label,
+    required Color cardColor,
+    required Color borderColor,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Data de nascimento',
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: InputDecorator(
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: cardColor,
+              prefixIcon: Icon(Icons.calendar_today_outlined,
+                  color: AppTheme.textSecondary, size: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+            child: Text(label, style: Theme.of(context).textTheme.bodyLarge),
+          ),
+        ),
+      ],
     );
   }
 
@@ -219,7 +244,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     required IconData icone,
     required Color cardColor,
     required Color borderColor,
-    TextInputType? tipoTeclado,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -233,51 +257,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
-          keyboardType: tipoTeclado,
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: _inputDecoration(
-              context, hint, icone, cardColor, borderColor),
-          validator: validator,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCampoSenha(
-    BuildContext context, {
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    required Color cardColor,
-    required Color borderColor,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          obscureText: !_senhaVisivel,
-          style: Theme.of(context).textTheme.bodyLarge,
-          decoration: _inputDecoration(
-            context, hint, Icons.lock_outline, cardColor, borderColor,
-            sufixo: IconButton(
-              icon: Icon(
-                _senhaVisivel
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: AppTheme.textSecondary,
-                size: 20,
-              ),
-              onPressed: () =>
-                  setState(() => _senhaVisivel = !_senhaVisivel),
-            ),
+            context,
+            hint,
+            icone,
+            cardColor,
+            borderColor,
           ),
           validator: validator,
         ),
@@ -290,9 +276,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     String hint,
     IconData icone,
     Color cardColor,
-    Color borderColor, {
-    Widget? sufixo,
-  }) {
+    Color borderColor,
+  ) {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(color: borderColor),
@@ -303,7 +288,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       filled: true,
       fillColor: cardColor,
       prefixIcon: Icon(icone, color: AppTheme.textSecondary, size: 20),
-      suffixIcon: sufixo,
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(

@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../domain/care_team/care_team_role.dart';
+import '../../../domain/profile/entities/user_profile.dart';
+import '../../auth/providers/auth_providers.dart';
+import '../../care/providers/care_providers.dart';
 import '../../shell/shell_page_header.dart';
 
 class ConfiguracoesPage extends ConsumerStatefulWidget {
@@ -44,64 +48,40 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
   }
 
   Widget _buildSecaoPerfil(BuildContext context, Color cardColor, Color borderColor) {
+    final profileAsync = ref.watch(currentProfileProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Perfil', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderColor),
+        profileAsync.when(
+          loading: () => Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor),
+            ),
+            child: const Center(child: CircularProgressIndicator()),
           ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: AppTheme.primary,
-                child: Text('K',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    )),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Karina Mendes',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 2),
-                    Text('Filha · Cuidadora principal',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text('PRINCIPAL',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
-                              ?.copyWith(
-                                color: AppTheme.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                              )),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right,
-                  color: Theme.of(context).textTheme.bodyMedium?.color),
-            ],
+          error: (_, _) => _buildPerfilCard(
+            context,
+            cardColor,
+            borderColor,
+            initials: '?',
+            nome: 'Perfil indisponivel',
+            subtitulo: 'Tente novamente mais tarde',
+          ),
+          data: (UserProfile? profile) => _buildPerfilCard(
+            context,
+            cardColor,
+            borderColor,
+            initials: profile?.initials ?? '?',
+            nome: profile?.fullName.isNotEmpty == true
+                ? profile!.fullName
+                : 'Cuidador',
+            subtitulo: profile?.email ?? 'Conta Donna Amparo',
           ),
         ),
         const SizedBox(height: 10),
@@ -304,13 +284,92 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                 icone: Icons.logout,
                 titulo: 'Sair',
                 subtitulo: 'Encerrar sessao',
-                onTap: () {},
+                onTap: _sair,
                 cor: Colors.red.shade400,
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _sair() async {
+    final error = await performSignOut(ref);
+    if (!mounted) return;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  Widget _buildPerfilCard(
+    BuildContext context,
+    Color cardColor,
+    Color borderColor, {
+    required String initials,
+    required String nome,
+    required String subtitulo,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: AppTheme.primary,
+            child: Text(initials,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                )),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(nome, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 2),
+                Text(subtitulo, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 4),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    CareTeamRole.admin.label.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: AppTheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right,
+              color: Theme.of(context).textTheme.bodyMedium?.color),
+        ],
+      ),
     );
   }
 
