@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../domain/medication/entities/medication_dose.dart';
+import '../../../domain/medication/entities/medication_doses_result.dart';
 import '../../care/providers/care_providers.dart';
+import '../../care/providers/care_team_providers.dart';
+import '../../medication/providers/medication_providers.dart';
 import '../../shell/shell_page_header.dart';
 
 class HomePage extends ConsumerWidget {
@@ -11,6 +15,12 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final careAsync = ref.watch(careContextProvider);
+    final dosesAsync = ref.watch(medicationDosesProvider);
+    final roleAsync = ref.watch(currentCareRoleProvider);
+    final canToggle = roleAsync.maybeWhen(
+      data: (role) => role?.canLogDosesAndVitals ?? false,
+      orElse: () => false,
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -21,7 +31,7 @@ class HomePage extends ConsumerWidget {
             children: [
               _buildHeader(context, careAsync),
               const SizedBox(height: 24),
-              _buildCardProximoMedicamento(context),
+              _buildCardProximoMedicamento(context, ref, dosesAsync, canToggle),
               const SizedBox(height: 24),
               _buildHidratacao(context, careAsync),
               const SizedBox(height: 24),
@@ -52,7 +62,129 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildCardProximoMedicamento(BuildContext context) {
+  Widget _buildCardProximoMedicamento(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<MedicationDosesResult> dosesAsync,
+    bool canToggle,
+  ) {
+    return dosesAsync.when(
+      loading: () => _buildMedicationCardShell(
+        context,
+        body: const Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+      error: (_, _) => _buildMedicationCardShell(
+        context,
+        subtitle: 'Nao foi possivel carregar as doses.',
+      ),
+      data: (result) {
+        final next = result.nextPendingDose;
+        if (next == null) {
+          return _buildMedicationCardShell(
+            context,
+            subtitle: 'Nenhuma dose pendente no momento.',
+          );
+        }
+        return _buildMedicationCardShell(
+          context,
+          title: next.isOverdue ? 'Dose atrasada' : 'Proximo medicamento',
+          subtitle: _doseTimeLine(next),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                next.displayName,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              if (next.instructions.trim().isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  next.instructions.trim(),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Colors.white70),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (canToggle) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => _confirmDose(context, ref, next),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white54),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Confirmar dose'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _doseTimeLine(MedicationDose dose) {
+    if (dose.isOverdue && dose.overdueLabel.isNotEmpty) {
+      return '${dose.overdueLabel} · ${dose.timeLabel}';
+    }
+    return 'as ${dose.timeLabel}';
+  }
+
+  Future<void> _confirmDose(
+    BuildContext context,
+    WidgetRef ref,
+    MedicationDose dose,
+  ) async {
+    final error = await toggleMedicationDoseTaken(
+      ref,
+      medicationId: dose.medicationId,
+      scheduleId: dose.scheduleId > 0 ? dose.scheduleId : null,
+      scheduledTime: dose.scheduledTime,
+      scheduledFor: dose.scheduledFor,
+      taken: true,
+    );
+    if (!context.mounted) return;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Dose confirmada.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildMedicationCardShell(
+    BuildContext context, {
+    String title = 'Proximo medicamento',
+    String? subtitle,
+    Widget? body,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -66,48 +198,41 @@ class HomePage extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Proximo medicamento',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w600,
-                      )),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white24,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(Icons.medication_outlined,
-                    color: Colors.white, size: 18),
+                child: const Icon(
+                  Icons.medication_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text('Losartana 50 mg',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  )),
-          const SizedBox(height: 4),
-          Text('as 20:00',
+          if (subtitle != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
-                  ?.copyWith(color: Colors.white70)),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white54),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Confirmar dose'),
+                  ?.copyWith(color: Colors.white70),
             ),
-          ),
+          ],
+          if (body != null) ...[
+            const SizedBox(height: 8),
+            body,
+          ],
         ],
       ),
     );

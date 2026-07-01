@@ -76,6 +76,74 @@ class MedicationDoseGenerator {
     return MedicationDosesResult(overdue: overdue, today: todayDoses);
   }
 
+  /// Doses de um unico dia civil (para calendario e agregadores).
+  static List<MedicationDose> dosesForDay({
+    required List<Map<String, dynamic>> medications,
+    required Map<String, Map<String, dynamic>> logsByKey,
+    required DateTime day,
+    DateTime? referenceDay,
+  }) {
+    final dayDate = _dateOnly(day);
+    final refDate = _dateOnly(referenceDay ?? DateTime.now());
+    final doses = <MedicationDose>[];
+
+    for (final med in medications) {
+      if (!_isMedActiveOnDay(med, dayDate)) continue;
+
+      final slots = _slotsForDay(med, dayDate);
+      for (final slot in slots) {
+        final logKey =
+            '${med['id']}:${_formatDate(dayDate)}:${slot.timeOfDay}';
+        final log = logsByKey[logKey];
+        doses.add(
+          MedicationDose.fromJson(
+            {
+              'medications': med,
+              'medication_schedules': slot.scheduleId > 0
+                  ? {'id': slot.scheduleId, 'time_of_day': slot.timeOfDay}
+                  : null,
+              'medication_logs': log,
+              'scheduled_time': slot.timeOfDay,
+            },
+            scheduledFor: dayDate,
+            referenceDay: refDate,
+          ),
+        );
+      }
+    }
+
+    doses.sort((a, b) => a.timeLabel.compareTo(b.timeLabel));
+    return doses;
+  }
+
+  /// Doses em um intervalo de dias (inclusive).
+  static List<MedicationDose> dosesForRange({
+    required List<Map<String, dynamic>> medications,
+    required Map<String, Map<String, dynamic>> logsByKey,
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
+    DateTime? referenceDay,
+  }) {
+    final start = _dateOnly(rangeStart);
+    final end = _dateOnly(rangeEnd);
+    final doses = <MedicationDose>[];
+
+    for (var day = start;
+        !day.isAfter(end);
+        day = day.add(const Duration(days: 1))) {
+      doses.addAll(
+        dosesForDay(
+          medications: medications,
+          logsByKey: logsByKey,
+          day: day,
+          referenceDay: referenceDay,
+        ),
+      );
+    }
+
+    return doses;
+  }
+
   /// Preview de slots para cadastro (proximos dias).
   static List<String> previewLabels({
     required MedicationScheduleMode scheduleMode,

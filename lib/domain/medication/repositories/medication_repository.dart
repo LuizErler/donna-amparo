@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../entities/medication_dose.dart';
 import '../entities/medication_doses_result.dart';
 import '../entities/medication_schedule_mode.dart';
 import '../entities/medication_summary.dart';
@@ -68,6 +69,12 @@ abstract class MedicationRepository {
     required String patientId,
     required DateTime day,
     bool includeOverdue = true,
+  });
+
+  Future<List<MedicationDose>> listDosesInRange({
+    required String patientId,
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
   });
 
   Future<List<MedicationSummary>> listMedications({
