@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../data/patient/datasources/patient_remote_datasource.dart';
 import '../../../data/patient/repositories/patient_repository_impl.dart';
 import '../../../data/profile/datasources/profile_remote_datasource.dart';
@@ -28,18 +30,50 @@ final patientRepositoryProvider = Provider<PatientRepository>((ref) {
   );
 });
 
+/// Dispara recarga de perfil/paciente a cada mudanca de sessao Supabase.
+final authStateVersionProvider = StreamProvider<int>((ref) {
+  if (!AppConfig.enableAuth) {
+    return Stream.value(0);
+  }
+
+  return Stream.multi((controller) {
+    controller.add(0);
+    final subscription = supabase.auth.onAuthStateChange.listen((_) {
+      controller.add(DateTime.now().millisecondsSinceEpoch);
+    });
+    controller.onCancel = () => subscription.cancel();
+  });
+});
+
 /// Perfil do cuidador logado (`profiles`).
 final currentProfileProvider = FutureProvider<UserProfile?>((ref) async {
-  return ref.watch(profileRepositoryProvider).getCurrentProfile();
+  ref.watch(authStateVersionProvider);
+
+  final userId = supabase.auth.currentUser?.id;
+  if (userId == null) return null;
+
+  final repo = ref.watch(profileRepositoryProvider);
+  var profile = await repo.getCurrentProfile();
+  if (profile == null) {
+    await repo.ensureCurrentProfile();
+    profile = await repo.getCurrentProfile();
+  }
+  return profile;
 });
 
 /// Paciente ativo do cuidador (MVP: primeiro vinculo aceito).
 final activePatientProvider = FutureProvider<Patient?>((ref) async {
+  ref.watch(authStateVersionProvider);
+
+  if (supabase.auth.currentUser?.id == null) return null;
   return ref.watch(patientRepositoryProvider).getActivePatient();
 });
 
 /// True quando o usuario ja concluiu onboarding (tem paciente vinculado).
 final hasActivePatientProvider = FutureProvider<bool>((ref) async {
+  ref.watch(authStateVersionProvider);
+
+  if (supabase.auth.currentUser?.id == null) return false;
   return ref.watch(patientRepositoryProvider).hasActivePatient();
 });
 
