@@ -92,6 +92,35 @@ class CareTeamRemoteDataSource {
     });
   }
 
+  Future<void> updateMemberRole({
+    required String patientId,
+    required String profileId,
+    required CareTeamRole role,
+  }) async {
+    await _client
+        .from('care_teams')
+        .update({'role': role.code})
+        .eq('patient_id', patientId)
+        .eq('profile_id', profileId)
+        .catchError((Object error) {
+      throw _mapError(error, 'Erro ao alterar papel do membro.');
+    });
+  }
+
+  Future<void> removeMember({
+    required String patientId,
+    required String profileId,
+  }) async {
+    await _client
+        .from('care_teams')
+        .delete()
+        .eq('patient_id', patientId)
+        .eq('profile_id', profileId)
+        .catchError((Object error) {
+      throw _mapError(error, 'Erro ao remover membro.');
+    });
+  }
+
   AppException _mapError(Object error, String fallback) {
     if (error is PostgrestException) {
       final message = error.message;
