@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/accessibility/a11y.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_providers.dart';
+import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -149,6 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
             hintText: 'seu@email.com',
@@ -202,9 +205,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 .labelMedium
                 ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
-        TextFormField(
+        Semantics(
+          label: 'Senha',
+          obscured: !_senhaVisivel,
+          child: TextFormField(
           controller: _senhaController,
           obscureText: !_senhaVisivel,
+          autofillHints: const [AutofillHints.password],
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
             hintText: '••••••••',
@@ -221,6 +228,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 color: AppTheme.textSecondary,
                 size: 20,
               ),
+              tooltip: _senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',
               onPressed: () =>
                   setState(() => _senhaVisivel = !_senhaVisivel),
             ),
@@ -254,6 +262,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             return null;
           },
         ),
+        ),
       ],
     );
   }
@@ -261,8 +270,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildEsqueciSenha(BuildContext context) {
     return Align(
       alignment: Alignment.centerRight,
-      child: GestureDetector(
-        onTap: () {},
+      child: MinTapTarget(
+        semanticsLabel: 'Esqueci minha senha',
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+        ),
         child: Text('Esqueci minha senha',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.primary,
@@ -273,7 +286,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildBotaoEntrar(BuildContext context, bool isLoading) {
-    return SizedBox(
+    return Semantics(
+      button: true,
+      label: 'Entrar na conta',
+      child: SizedBox(
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
@@ -298,6 +314,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: Colors.white,
                     )),
       ),
+    ),
     );
   }
 
@@ -348,7 +365,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildRodape(BuildContext context) {
     return Center(
-      child: GestureDetector(
+      child: MinTapTarget(
+        semanticsLabel: 'Nao tem conta? Cadastre-se',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const SignupScreen()),

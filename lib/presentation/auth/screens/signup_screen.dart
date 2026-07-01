@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/accessibility/a11y.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_providers.dart';
@@ -149,7 +150,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
-                SizedBox(
+                Semantics(
+                  button: true,
+                  label: 'Criar conta no Donna Amparo',
+                  child: SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
@@ -177,9 +181,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 ?.copyWith(color: Colors.white)),
                   ),
                 ),
+                ),
                 const SizedBox(height: 24),
                 Center(
-                  child: GestureDetector(
+                  child: MinTapTarget(
+                    semanticsLabel: 'Ja tem conta? Entrar',
                     onTap: () => Navigator.pop(context),
                     child: RichText(
                       text: TextSpan(
@@ -275,6 +281,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 color: AppTheme.textSecondary,
                 size: 20,
               ),
+              tooltip: _senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',
               onPressed: () =>
                   setState(() => _senhaVisivel = !_senhaVisivel),
             ),

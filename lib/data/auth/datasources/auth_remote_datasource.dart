@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/auth/auth_redirect_url.dart';
 import '../../../core/supabase/supabase_config.dart';
 
 class AuthRemoteDataSource {
@@ -34,4 +35,17 @@ class AuthRemoteDataSource {
   bool get hasSession => _client.auth.currentSession != null;
 
   Future<void> signOut() => _client.auth.signOut();
+
+  Future<void> resetPasswordForEmail(String email) {
+    return _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: authRedirectUrl,
+    );
+  }
+
+  Future<void> updatePassword(String newPassword) {
+    return _client.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+  }
 }

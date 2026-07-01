@@ -7,6 +7,7 @@ import '../care/providers/care_providers.dart';
 import '../onboarding/screens/patient_onboarding_screen.dart';
 import 'providers/auth_providers.dart';
 import 'screens/login_screen.dart';
+import 'screens/set_password_screen.dart';
 import '../shell/main_navigation.dart';
 
 /// Porteiro global: sessao Supabase + convite + onboarding de paciente.
@@ -28,6 +29,16 @@ class AuthGate extends ConsumerWidget {
       error: (_, _) => const LoginScreen(),
       data: (isAuthenticated) {
         if (!isAuthenticated) return const LoginScreen();
+
+        final needsRecovery = ref.watch(passwordRecoveryProvider);
+        if (needsRecovery) {
+          return SetPasswordScreen(
+            titulo: 'Crie uma nova senha',
+            subtitulo: 'Defina sua nova senha para continuar usando o app.',
+            onSuccess: () =>
+                ref.read(passwordRecoveryProvider.notifier).clear(),
+          );
+        }
 
         return PendingInviteGate(
           child: const _PostAuthFlow(),

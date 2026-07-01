@@ -13,4 +13,8 @@ abstract class AuthRepository {
   bool get isAuthenticated;
 
   Future<void> signOut();
+
+  Future<void> resetPassword({required String email});
+
+  Future<void> updatePassword({required String newPassword});
 }

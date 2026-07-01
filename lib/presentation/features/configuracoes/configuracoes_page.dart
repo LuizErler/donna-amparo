@@ -5,6 +5,7 @@ import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/profile/entities/user_profile.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../auth/screens/set_password_screen.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../profile/screens/profile_edit_screen.dart';
@@ -126,9 +127,17 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
           cardColor: cardColor,
           borderColor: borderColor,
           icone: Icons.lock_outline,
-          titulo: 'Privacidade e seguranca',
-          subtitulo: 'Senha, biometria e dados',
-          onTap: () {},
+          titulo: 'Alterar senha',
+          subtitulo: 'Atualize a senha da sua conta',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const SetPasswordScreen(
+                titulo: 'Alterar senha',
+                subtitulo: 'Escolha uma nova senha segura para sua conta.',
+              ),
+            ),
+          ),
         ),
       ],
     );
