@@ -71,6 +71,17 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
   );
   bool _loading = false;
 
+  late final String _initialName;
+  late final String _initialDosage;
+  late final String _initialInstructions;
+  late final String _initialDuration;
+  late final String _initialInterval;
+  late final MedicationTreatmentType _initialTreatmentType;
+  late final MedicationFrequencyPreset _initialFrequency;
+  late final DateTime _initialStartDate;
+  late final TimeOfDay _initialAnchorTime;
+  late final List<TimeOfDay> _initialTimes;
+
   static DateTime _today() {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
@@ -80,37 +91,115 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
   void initState() {
     super.initState();
     final med = widget.existing;
-    if (med == null) return;
+    if (med != null) {
+      _nameController.text = med.name;
+      _dosageController.text = med.dosage ?? '';
+      _instructionsController.text = med.instructions ?? '';
+      _startDate = med.startDate ?? _today();
 
-    _nameController.text = med.name;
-    _dosageController.text = med.dosage ?? '';
-    _instructionsController.text = med.instructions ?? '';
-    _startDate = med.startDate ?? _today();
+      if (med.endDate != null && med.startDate != null) {
+        _treatmentType = MedicationTreatmentType.limited;
+        final days = med.endDate!.difference(med.startDate!).inDays + 1;
+        _durationController.text = days.toString();
+      }
 
-    if (med.endDate != null && med.startDate != null) {
-      _treatmentType = MedicationTreatmentType.limited;
-      final days = med.endDate!.difference(med.startDate!).inDays + 1;
-      _durationController.text = days.toString();
+      if (med.scheduleMode == MedicationScheduleMode.interval) {
+        _frequency = MedicationFrequencyPreset.interval;
+        _intervalController.text = (med.intervalHours ?? 8).toString();
+        _anchorTime = _parseTime(med.anchorTime) ??
+            const TimeOfDay(hour: 8, minute: 0);
+      } else if (med.scheduleTimes.length == 1) {
+        _frequency = MedicationFrequencyPreset.onceDaily;
+        _times =
+            med.scheduleTimes.map(_parseTime).whereType<TimeOfDay>().toList();
+      } else if (med.scheduleTimes.length == 2) {
+        _frequency = MedicationFrequencyPreset.twiceDaily;
+        _times =
+            med.scheduleTimes.map(_parseTime).whereType<TimeOfDay>().toList();
+      } else if (med.scheduleTimes.length == 3) {
+        _frequency = MedicationFrequencyPreset.threeTimesDaily;
+        _times =
+            med.scheduleTimes.map(_parseTime).whereType<TimeOfDay>().toList();
+      } else {
+        _frequency = MedicationFrequencyPreset.custom;
+        _times =
+            med.scheduleTimes.map(_parseTime).whereType<TimeOfDay>().toList();
+        if (_times.isEmpty) _times = [const TimeOfDay(hour: 8, minute: 0)];
+      }
     }
 
-    if (med.scheduleMode == MedicationScheduleMode.interval) {
-      _frequency = MedicationFrequencyPreset.interval;
-      _intervalController.text = (med.intervalHours ?? 8).toString();
-      _anchorTime = _parseTime(med.anchorTime) ??
-          const TimeOfDay(hour: 8, minute: 0);
-    } else if (med.scheduleTimes.length == 1) {
-      _frequency = MedicationFrequencyPreset.onceDaily;
-      _times = med.scheduleTimes.map(_parseTime).whereType<TimeOfDay>().toList();
-    } else if (med.scheduleTimes.length == 2) {
-      _frequency = MedicationFrequencyPreset.twiceDaily;
-      _times = med.scheduleTimes.map(_parseTime).whereType<TimeOfDay>().toList();
-    } else if (med.scheduleTimes.length == 3) {
-      _frequency = MedicationFrequencyPreset.threeTimesDaily;
-      _times = med.scheduleTimes.map(_parseTime).whereType<TimeOfDay>().toList();
-    } else {
-      _frequency = MedicationFrequencyPreset.custom;
-      _times = med.scheduleTimes.map(_parseTime).whereType<TimeOfDay>().toList();
-      if (_times.isEmpty) _times = [const TimeOfDay(hour: 8, minute: 0)];
+    _captureInitialSnapshot();
+  }
+
+  void _captureInitialSnapshot() {
+    _initialName = _nameController.text;
+    _initialDosage = _dosageController.text;
+    _initialInstructions = _instructionsController.text;
+    _initialDuration = _durationController.text;
+    _initialInterval = _intervalController.text;
+    _initialTreatmentType = _treatmentType;
+    _initialFrequency = _frequency;
+    _initialStartDate = _startDate;
+    _initialAnchorTime = _anchorTime;
+    _initialTimes = _times
+        .map((t) => TimeOfDay(hour: t.hour, minute: t.minute))
+        .toList();
+  }
+
+  bool _sameDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  bool _sameTime(TimeOfDay a, TimeOfDay b) =>
+      a.hour == b.hour && a.minute == b.minute;
+
+  bool _sameTimes(List<TimeOfDay> a, List<TimeOfDay> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!_sameTime(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  bool get _isDirty =>
+      _nameController.text != _initialName ||
+      _dosageController.text != _initialDosage ||
+      _instructionsController.text != _initialInstructions ||
+      _durationController.text != _initialDuration ||
+      _intervalController.text != _initialInterval ||
+      _treatmentType != _initialTreatmentType ||
+      _frequency != _initialFrequency ||
+      !_sameDate(_startDate, _initialStartDate) ||
+      !_sameTime(_anchorTime, _initialAnchorTime) ||
+      !_sameTimes(_times, _initialTimes);
+
+  Future<void> _requestClose() async {
+    if (!_isDirty) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Descartar alteracoes?'),
+        content: const Text(
+          'As informacoes preenchidas serao perdidas.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Continuar editando'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Descartar'),
+          ),
+        ],
+      ),
+    );
+
+    if (discard == true && mounted) {
+      Navigator.of(context).pop();
     }
   }
 
@@ -384,27 +473,38 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
     final summary = _treatmentSummary();
     final preview = _previewLabels();
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomInset),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.isEditing ? 'Editar medicamento' : 'Novo medicamento',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.isEditing
-                    ? 'Alteracoes valem para doses futuras. Confirmacoes anteriores sao mantidas.'
-                    : 'Defina o remedio, a frequencia e o periodo de uso.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 20),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _requestClose();
+      },
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottomInset),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: borderColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                _buildSheetHeader(
+                  context,
+                  cardColor: cardColor,
+                  borderColor: borderColor,
+                ),
+                const SizedBox(height: 20),
               _buildField(
                 context,
                 label: 'Nome do medicamento',
@@ -630,10 +730,93 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                             color: Colors.white,
                           ),
                         )
-                      : Text(widget.isEditing ? 'Salvar alteracoes' : 'Salvar medicamento'),
+                      : Text(widget.isEditing
+                          ? 'Salvar alteracoes'
+                          : 'Salvar medicamento'),
                 ),
               ),
-            ],
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  onPressed: _loading ? null : _requestClose,
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetHeader(
+    BuildContext context, {
+    required Color cardColor,
+    required Color borderColor,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: borderColor)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.isEditing
+                      ? 'Editar medicamento'
+                      : 'Novo medicamento',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.isEditing
+                      ? 'Alteracoes valem para doses futuras. Confirmacoes anteriores sao mantidas.'
+                      : 'Defina o remedio, a frequencia e o periodo de uso.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          _buildCloseButton(cardColor: cardColor, borderColor: borderColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCloseButton({
+    required Color cardColor,
+    required Color borderColor,
+  }) {
+    return Material(
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: borderColor),
+      ),
+      child: InkWell(
+        onTap: _loading ? null : _requestClose,
+        borderRadius: BorderRadius.circular(14),
+        child: Semantics(
+          button: true,
+          label: 'Fechar',
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(
+              Icons.close,
+              size: 22,
+              color: AppTheme.textSecondary,
+            ),
           ),
         ),
       ),
