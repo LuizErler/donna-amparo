@@ -1,81 +1,315 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../shell/shell_page_header.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class MedicamentosPage extends StatefulWidget {
+import '../../../core/theme/app_theme.dart';
+import '../../../domain/medication/entities/medication_day_period.dart';
+import '../../../domain/medication/entities/medication_dose.dart';
+import '../../../domain/medication/entities/medication_doses_result.dart';
+import '../../care/providers/care_providers.dart';
+import '../../care/providers/care_team_providers.dart';
+import '../../medication/add_medication_sheet.dart';
+import '../../medication/providers/medication_providers.dart';
+import '../../shell/shell_page_header.dart';
+import 'medicamentos_gerenciar_page.dart';
+
+class MedicamentosPage extends ConsumerWidget {
   const MedicamentosPage({super.key});
 
   @override
-  State<MedicamentosPage> createState() => _MedicamentosPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dosesAsync = ref.watch(medicationDosesProvider);
+    final roleAsync = ref.watch(currentCareRoleProvider);
+    final canToggle = roleAsync.maybeWhen(
+      data: (role) => role?.canLogDosesAndVitals ?? false,
+      orElse: () => false,
+    );
+    final canManage = roleAsync.maybeWhen(
+      data: (role) => role?.canCreateMedsAndAppointments ?? false,
+      orElse: () => false,
+    );
 
-class _MedicamentosPageState extends State<MedicamentosPage> {
-  final List<_Medicamento> _medicamentos = [
-    _Medicamento(nome: 'Losartana 50 mg', instrucao: 'Com agua, apos refeicao', hora: '08:00', periodo: 'Manha', tomou: true),
-    _Medicamento(nome: 'Metformina 500 mg', instrucao: 'Durante o cafe da manha', hora: '08:00', periodo: 'Manha', tomou: true),
-    _Medicamento(nome: 'AAS 100 mg', instrucao: 'Com agua', hora: '12:00', periodo: 'Tarde', tomou: true),
-    _Medicamento(nome: 'Metformina 500 mg', instrucao: 'Durante o almoco', hora: '12:00', periodo: 'Tarde', tomou: false),
-    _Medicamento(nome: 'Atorvastatina 20 mg', instrucao: 'Preferencialmente a noite', hora: '20:00', periodo: 'Noite', tomou: false),
-    _Medicamento(nome: 'Losartana 50 mg', instrucao: 'Com agua, apos jantar', hora: '20:00', periodo: 'Noite', tomou: false),
-    _Medicamento(nome: 'Clonazepam 0.5 mg', instrucao: 'Antes de dormir', hora: '22:00', periodo: 'Noite', tomou: false),
-  ];
-
-  void _toggleTomou(int index) {
-    setState(() {
-      _medicamentos[index].tomou = !_medicamentos[index].tomou;
-    });
-  }
-
-  List<_Medicamento> get _manha =>
-      _medicamentos.where((m) => m.periodo == 'Manha').toList();
-  List<_Medicamento> get _tarde =>
-      _medicamentos.where((m) => m.periodo == 'Tarde').toList();
-  List<_Medicamento> get _noite =>
-      _medicamentos.where((m) => m.periodo == 'Noite').toList();
-
-  int get _totalTomados => _medicamentos.where((m) => m.tomou).length;
-  int get _total => _medicamentos.length;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 20),
-              _buildProgresso(context),
-              const SizedBox(height: 28),
-              _buildPeriodo(context, 'Manha', Icons.wb_sunny_outlined, _manha),
-              const SizedBox(height: 20),
-              _buildPeriodo(context, 'Tarde', Icons.wb_cloudy_outlined, _tarde),
-              const SizedBox(height: 20),
-              _buildPeriodo(context, 'Noite', Icons.nightlight_outlined, _noite),
-              const SizedBox(height: 20),
-            ],
+        child: dosesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => _buildError(context, error),
+          data: (result) => _buildContent(
+            context,
+            ref,
+            result,
+            canToggle,
+            canManage,
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        tooltip: 'Adicionar medicamento',
-        child: const Icon(Icons.add),
+      floatingActionButton: canManage
+          ? FloatingActionButton(
+              onPressed: () => _onAddMedication(context, ref),
+              tooltip: 'Adicionar medicamento',
+              child: const Icon(Icons.add),
+            )
+          : null,
+    );
+  }
+
+  Future<void> _onAddMedication(BuildContext context, WidgetRef ref) async {
+    final patient = await ref.read(activePatientProvider.future);
+    if (!context.mounted) return;
+    if (patient == null) {
+      _snack(context, 'Paciente nao encontrado.');
+      return;
+    }
+
+    final saved = await showMedicationFormSheet(
+      context,
+      ref,
+      patientId: patient.id,
+    );
+    if (!context.mounted || saved != true) return;
+    _snack(context, 'Medicamento cadastrado com sucesso.');
+  }
+
+  void _openGerenciar(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const MedicamentosGerenciarPage(),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return const ShellPageHeader(
-      title: 'Medicamentos',
-      subtitle: 'Doses do dia e confirmacoes.',
+  void _snack(BuildContext context, String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red.shade700 : null,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
-  Widget _buildProgresso(BuildContext context) {
-    final double pct = _totalTomados / _total;
+  Widget _buildError(BuildContext context, Object error) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ShellPageHeader(
+            title: 'Medicamentos',
+            subtitle: 'Doses do dia e confirmacoes.',
+          ),
+          const SizedBox(height: 24),
+          const Text('Nao foi possivel carregar os medicamentos.'),
+          const SizedBox(height: 8),
+          Text(error.toString(),
+              style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    MedicationDosesResult result,
+    bool canToggle,
+    bool canManage,
+  ) {
+    final today = result.today;
+    final morning = today
+        .where((d) => d.period == MedicationDayPeriod.morning)
+        .toList();
+    final afternoon = today
+        .where((d) => d.period == MedicationDayPeriod.afternoon)
+        .toList();
+    final evening = today
+        .where((d) => d.period == MedicationDayPeriod.evening)
+        .toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ShellPageHeader(
+            title: 'Medicamentos',
+            subtitle: 'Doses do dia e confirmacoes.',
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => _openGerenciar(context),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('Gerenciar medicamentos'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (result.overdue.isNotEmpty)
+            _buildOverdueSection(
+              context,
+              ref,
+              result.overdue,
+              canToggle,
+            ),
+          if (result.overdue.isNotEmpty) const SizedBox(height: 20),
+          if (today.isEmpty && result.overdue.isEmpty)
+            _buildEmptyState(context)
+          else if (today.isNotEmpty) ...[
+            _buildProgresso(context, result.takenToday, result.totalToday),
+            const SizedBox(height: 28),
+            if (morning.isNotEmpty)
+              _buildPeriodo(
+                context,
+                ref,
+                MedicationDayPeriod.morning,
+                Icons.wb_sunny_outlined,
+                morning,
+                canToggle,
+              ),
+            if (morning.isNotEmpty &&
+                (afternoon.isNotEmpty || evening.isNotEmpty))
+              const SizedBox(height: 20),
+            if (afternoon.isNotEmpty)
+              _buildPeriodo(
+                context,
+                ref,
+                MedicationDayPeriod.afternoon,
+                Icons.wb_cloudy_outlined,
+                afternoon,
+                canToggle,
+              ),
+            if (afternoon.isNotEmpty && evening.isNotEmpty)
+              const SizedBox(height: 20),
+            if (evening.isNotEmpty)
+              _buildPeriodo(
+                context,
+                ref,
+                MedicationDayPeriod.evening,
+                Icons.nightlight_outlined,
+                evening,
+                canToggle,
+              ),
+          ],
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverdueSection(
+    BuildContext context,
+    WidgetRef ref,
+    List<MedicationDose> overdue,
+    bool canToggle,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  color: Colors.orange.shade800, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${overdue.length} dose${overdue.length > 1 ? 's' : ''} atrasada${overdue.length > 1 ? 's' : ''}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.orange.shade900,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              if (canToggle)
+                TextButton(
+                  onPressed: () => _resolveOverdue(context, ref, overdue),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.orange.shade900,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('Resolver'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...overdue.map(
+            (dose) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildCardMedicamento(context, ref, dose, canToggle),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _resolveOverdue(
+    BuildContext context,
+    WidgetRef ref,
+    List<MedicationDose> overdue,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Resolver doses atrasadas?'),
+        content: Text(
+          'Registrar ${overdue.length} dose${overdue.length > 1 ? 's' : ''} '
+          'como nao tomada${overdue.length > 1 ? 's' : ''}? '
+          'Ficarao no historico para relatorios.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+
+    final error = await resolveAllOverdueDoses(ref, overdue: overdue);
+    if (!context.mounted) return;
+    if (error != null) {
+      _snack(context, error, isError: true);
+    } else {
+      _snack(context, 'Doses registradas como nao tomadas.');
+    }
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardNormal,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: const Text(
+        'Nenhum medicamento cadastrado para hoje.\n'
+        'Toque em + para cadastrar o primeiro remedio.',
+      ),
+    );
+  }
+
+  Widget _buildProgresso(BuildContext context, int totalTaken, int total) {
+    final pct = total == 0 ? 0.0 : totalTaken / total;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -94,7 +328,7 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
                       .textTheme
                       .labelMedium
                       ?.copyWith(color: Colors.white70, fontWeight: FontWeight.w600)),
-              Text('$_totalTomados de $_total doses',
+              Text('$totalTaken de $total doses',
                   style: Theme.of(context)
                       .textTheme
                       .labelMedium
@@ -115,7 +349,7 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
           Text(
             pct == 1.0
                 ? 'Todas as doses confirmadas!'
-                : '${_total - _totalTomados} doses pendentes para hoje.',
+                : '${total - totalTaken} doses pendentes para hoje.',
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -126,9 +360,15 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
     );
   }
 
-  Widget _buildPeriodo(BuildContext context, String titulo, IconData icone,
-      List<_Medicamento> lista) {
-    final todosTomados = lista.every((m) => m.tomou);
+  Widget _buildPeriodo(
+    BuildContext context,
+    WidgetRef ref,
+    MedicationDayPeriod period,
+    IconData icone,
+    List<MedicationDose> lista,
+    bool canToggle,
+  ) {
+    final todosTomados = lista.every((d) => d.taken);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -136,11 +376,12 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
           children: [
             Icon(icone, size: 18, color: AppTheme.textSecondary),
             const SizedBox(width: 6),
-            Text(titulo, style: Theme.of(context).textTheme.titleMedium),
+            Text(period.label, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(width: 8),
             if (todosTomados)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.green.shade100,
                   borderRadius: BorderRadius.circular(10),
@@ -154,47 +395,62 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
           ],
         ),
         const SizedBox(height: 10),
-        ...lista.asMap().entries.map((entry) {
-          final globalIndex = _medicamentos.indexOf(entry.value);
-          return Padding(
+        ...lista.map(
+          (dose) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: _buildCardMedicamento(context, entry.value, globalIndex),
-          );
-        }),
+            child: _buildCardMedicamento(context, ref, dose, canToggle),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildCardMedicamento(
-      BuildContext context, _Medicamento med, int index) {
+    BuildContext context,
+    WidgetRef ref,
+    MedicationDose dose,
+    bool canToggle,
+  ) {
+    final isOverdue = dose.isOverdue;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: med.tomou
+        color: dose.taken
             ? Colors.green.shade50
-            : AppTheme.cardNormal,
+            : isOverdue
+                ? Colors.orange.shade50
+                : AppTheme.cardNormal,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: med.tomou ? Colors.green.shade200 : AppTheme.cardBorder,
+          color: dose.taken
+              ? Colors.green.shade200
+              : isOverdue
+                  ? Colors.orange.shade200
+                  : AppTheme.cardBorder,
         ),
       ),
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => _toggleTomou(index),
+            onTap: canToggle && !isOverdue
+                ? () => _onToggleDose(context, ref, dose)
+                : null,
+            onLongPress: canToggle && isOverdue
+                ? () => _onMarkNotTaken(context, ref, dose)
+                : null,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: med.tomou ? Colors.green : Colors.transparent,
+                color: dose.taken ? Colors.green : Colors.transparent,
                 border: Border.all(
-                  color: med.tomou ? Colors.green : AppTheme.cardBorder,
+                  color: dose.taken ? Colors.green : AppTheme.cardBorder,
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: med.tomou
+              child: dose.taken
                   ? const Icon(Icons.check, color: Colors.white, size: 16)
                   : null,
             ),
@@ -205,25 +461,36 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  med.nome,
+                  dose.displayName,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        decoration: med.tomou
-                            ? TextDecoration.lineThrough
-                            : null,
-                        color: med.tomou
+                        decoration:
+                            dose.taken ? TextDecoration.lineThrough : null,
+                        color: dose.taken
                             ? AppTheme.textSecondary
                             : AppTheme.textPrimary,
                       ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  med.instrucao,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: med.tomou
-                            ? AppTheme.textSecondary.withValues(alpha: 0.7)
-                            : null,
-                      ),
-                ),
+                if (isOverdue) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    dose.overdueLabel,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Colors.orange.shade800,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+                if (dose.instructions.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    dose.instructions,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: dose.taken
+                              ? AppTheme.textSecondary.withValues(alpha: 0.7)
+                              : null,
+                        ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -234,26 +501,34 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: med.tomou
+                  color: dose.taken
                       ? Colors.green.shade100
-                      : AppTheme.primary.withValues(alpha: 0.1),
+                      : isOverdue
+                          ? Colors.orange.shade100
+                          : AppTheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  med.hora,
+                  dose.timeLabel,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: med.tomou
+                        color: dose.taken
                             ? Colors.green.shade700
-                            : AppTheme.primary,
+                            : isOverdue
+                                ? Colors.orange.shade800
+                                : AppTheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                med.tomou ? 'Confirmado' : 'Pendente',
+                dose.taken
+                    ? 'Confirmado'
+                    : isOverdue
+                        ? 'Atrasada'
+                        : 'Pendente',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: med.tomou
+                      color: dose.taken
                           ? Colors.green.shade600
                           : AppTheme.textSecondary,
                     ),
@@ -264,20 +539,37 @@ class _MedicamentosPageState extends State<MedicamentosPage> {
       ),
     );
   }
-}
 
-class _Medicamento {
-  final String nome;
-  final String instrucao;
-  final String hora;
-  final String periodo;
-  bool tomou;
+  Future<void> _onToggleDose(
+    BuildContext context,
+    WidgetRef ref,
+    MedicationDose dose,
+  ) async {
+    final error = await toggleMedicationDoseTaken(
+      ref,
+      medicationId: dose.medicationId,
+      scheduleId: dose.scheduleId > 0 ? dose.scheduleId : null,
+      scheduledTime: dose.scheduledTime,
+      scheduledFor: dose.scheduledFor,
+      taken: !dose.taken,
+    );
+    if (!context.mounted) return;
+    if (error != null) {
+      _snack(context, error, isError: true);
+    }
+  }
 
-  _Medicamento({
-    required this.nome,
-    required this.instrucao,
-    required this.hora,
-    required this.periodo,
-    required this.tomou,
-  });
+  Future<void> _onMarkNotTaken(
+    BuildContext context,
+    WidgetRef ref,
+    MedicationDose dose,
+  ) async {
+    final error = await markDoseNotTaken(ref, dose: dose);
+    if (!context.mounted) return;
+    if (error != null) {
+      _snack(context, error, isError: true);
+    } else {
+      _snack(context, 'Registrada como nao tomada.');
+    }
+  }
 }
