@@ -14,5 +14,16 @@ abstract class CareTeamRepository {
 
   Future<void> acceptInvite(String token);
 
+  Future<void> updateMemberRole({
+    required String patientId,
+    required String profileId,
+    required CareTeamRole newRole,
+  });
+
+  Future<void> removeMember({
+    required String patientId,
+    required String profileId,
+  });
+
   String buildInviteLink(String token);
 }

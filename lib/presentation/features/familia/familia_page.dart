@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/care_team/entities/care_team_member.dart';
 import '../../care/invite/invite_member_sheet.dart';
+import '../../care/invite/manage_member_sheet.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 
@@ -65,7 +66,13 @@ class FamiliaPage extends ConsumerWidget {
                       ),
                     ),
                     error: (_, _) => _buildError(context, 'Erro ao carregar membros.'),
-                    data: (members) => _buildMembros(context, members),
+                    data: (members) => _buildMembros(
+                      context,
+                      ref,
+                      patient.id,
+                      canInvite,
+                      members,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   _buildAtividade(context),
@@ -168,7 +175,13 @@ class FamiliaPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildMembros(BuildContext context, List<CareTeamMember> members) {
+  Widget _buildMembros(
+    BuildContext context,
+    WidgetRef ref,
+    String patientId,
+    bool canManage,
+    List<CareTeamMember> members,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -180,13 +193,29 @@ class FamiliaPage extends ConsumerWidget {
         else
           ...members.map((m) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _buildCardMembro(context, m),
+                child: _buildCardMembro(
+                  context,
+                  ref,
+                  patientId,
+                  canManage,
+                  m,
+                ),
               )),
       ],
     );
   }
 
-  Widget _buildCardMembro(BuildContext context, CareTeamMember member) {
+  bool _canManageMember(CareTeamMember member) {
+    return !member.isAdmin && !member.isCurrentUser;
+  }
+
+  Widget _buildCardMembro(
+    BuildContext context,
+    WidgetRef ref,
+    String patientId,
+    bool canManage,
+    CareTeamMember member,
+  ) {
     final color = _memberColor(member.profileId);
     final status = member.isCurrentUser ? 'Voce' : 'Membro ativo';
 
@@ -263,6 +292,17 @@ class FamiliaPage extends ConsumerWidget {
               ],
             ),
           ),
+          if (canManage && _canManageMember(member))
+            IconButton(
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'Gerenciar membro',
+              onPressed: () => showManageMemberSheet(
+                context,
+                ref,
+                patientId: patientId,
+                member: member,
+              ),
+            ),
         ],
       ),
     );

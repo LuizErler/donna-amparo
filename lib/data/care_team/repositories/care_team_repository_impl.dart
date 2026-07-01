@@ -1,3 +1,4 @@
+import '../../../core/errors/app_exception.dart';
 import '../../../domain/care_team/care_team_role.dart';
 import '../../../domain/care_team/entities/care_invite_result.dart';
 import '../../../domain/care_team/entities/care_team_member.dart';
@@ -11,6 +12,13 @@ class CareTeamRepositoryImpl implements CareTeamRepository {
 
   static const inviteableRoles = [
     CareTeamRole.caregiver,
+    CareTeamRole.observer,
+  ];
+
+  /// Papeis que o admin pode atribuir a membros ja aceitos.
+  static const editableRoles = [
+    CareTeamRole.caregiver,
+    CareTeamRole.caregiverBasic,
     CareTeamRole.observer,
   ];
 
@@ -35,6 +43,29 @@ class CareTeamRepositoryImpl implements CareTeamRepository {
 
   @override
   Future<void> acceptInvite(String token) => _remote.acceptInvite(token);
+
+  @override
+  Future<void> updateMemberRole({
+    required String patientId,
+    required String profileId,
+    required CareTeamRole newRole,
+  }) {
+    if (!editableRoles.contains(newRole)) {
+      throw const AppException('Papel nao permitido para este membro.');
+    }
+    return _remote.updateMemberRole(
+      patientId: patientId,
+      profileId: profileId,
+      role: newRole,
+    );
+  }
+
+  @override
+  Future<void> removeMember({
+    required String patientId,
+    required String profileId,
+  }) =>
+      _remote.removeMember(patientId: patientId, profileId: profileId);
 
   @override
   String buildInviteLink(String token) {
