@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../domain/care_team/care_team_role.dart';
 import '../../../domain/profile/entities/user_profile.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../care/providers/care_providers.dart';
+import '../../care/providers/care_team_providers.dart';
+import '../../profile/screens/profile_edit_screen.dart';
 import '../../shell/shell_page_header.dart';
 
 class ConfiguracoesPage extends ConsumerStatefulWidget {
@@ -49,6 +50,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
 
   Widget _buildSecaoPerfil(BuildContext context, Color cardColor, Color borderColor) {
     final profileAsync = ref.watch(currentProfileProvider);
+    final roleAsync = ref.watch(currentCareRoleProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,17 +74,31 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
             initials: '?',
             nome: 'Perfil indisponivel',
             subtitulo: 'Tente novamente mais tarde',
+            roleLabel: '—',
           ),
-          data: (UserProfile? profile) => _buildPerfilCard(
-            context,
-            cardColor,
-            borderColor,
-            initials: profile?.initials ?? '?',
-            nome: profile?.fullName.isNotEmpty == true
-                ? profile!.fullName
-                : 'Cuidador',
-            subtitulo: profile?.email ?? 'Conta Donna Amparo',
-          ),
+          data: (UserProfile? profile) {
+            final roleLabel = roleAsync.maybeWhen(
+              data: (role) => role?.label ?? 'Membro',
+              orElse: () => 'Carregando...',
+            );
+            return GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
+              ),
+              child: _buildPerfilCard(
+                context,
+                cardColor,
+                borderColor,
+                initials: profile?.initials ?? '?',
+                nome: profile?.fullName.isNotEmpty == true
+                    ? profile!.fullName
+                    : 'Cuidador',
+                subtitulo: profile?.email ?? 'Conta Donna Amparo',
+                roleLabel: roleLabel,
+              ),
+            );
+          },
         ),
         const SizedBox(height: 10),
         _buildItem(
@@ -318,6 +334,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
     required String initials,
     required String nome,
     required String subtitulo,
+    required String roleLabel,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -355,7 +372,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    CareTeamRole.admin.label.toUpperCase(),
+                    roleLabel.toUpperCase(),
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: AppTheme.primary,
                           fontWeight: FontWeight.bold,
