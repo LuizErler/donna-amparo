@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/calendar/entities/calendar_event.dart';
+import '../../../domain/medication/entities/medication_dose.dart';
+import '../../calendar/calendar_event_mapper.dart';
+import '../../calendar/providers/calendar_providers.dart';
 import '../../shell/shell_page_header.dart';
 import '../consultas/consultas_page.dart';
 import 'mock_calendar_events.dart';
 
-class CalendarioPage extends StatefulWidget {
+class CalendarioPage extends ConsumerStatefulWidget {
   const CalendarioPage({super.key});
 
   @override
-  State<CalendarioPage> createState() => _CalendarioPageState();
+  ConsumerState<CalendarioPage> createState() => _CalendarioPageState();
 }
 
-class _CalendarioPageState extends State<CalendarioPage> {
+class _CalendarioPageState extends ConsumerState<CalendarioPage> {
   late DateTime _focusedDay;
   late DateTime _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -22,15 +26,41 @@ class _CalendarioPageState extends State<CalendarioPage> {
   @override
   void initState() {
     super.initState();
-    _focusedDay = DateTime(2026, 6, 27);
+    final now = DateTime.now();
+    _focusedDay = DateTime(now.year, now.month, now.day);
     _selectedDay = _focusedDay;
   }
 
-  List<CalendarEvent> get _eventsForSelectedDay =>
-      MockCalendarEvents.forDay(_selectedDay);
+  List<CalendarEvent> _eventsForDay(
+    DateTime day,
+    List<MedicationDose> medicationDoses,
+  ) {
+    final staticEvents = MockCalendarEvents.forDay(day);
+    final medEvents = CalendarEventMapper.dosesOnDay(medicationDoses, day)
+        .map(CalendarEventMapper.fromMedicationDose);
+    return [...staticEvents, ...medEvents]
+      ..sort((a, b) => a.start.compareTo(b.start));
+  }
+
+  List<CalendarEventType> _typesOnDay(
+    DateTime day,
+    List<MedicationDose> medicationDoses,
+  ) {
+    final types = MockCalendarEvents.typesOnDay(day);
+    if (CalendarEventMapper.dosesOnDay(medicationDoses, day).isNotEmpty) {
+      types.add(CalendarEventType.medicationDose);
+    }
+    return types.toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final monthKey = calendarMonthKey(_focusedDay);
+    final dosesAsync = ref.watch(medicationCalendarDosesProvider(monthKey));
+    final medicationDoses = dosesAsync.valueOrNull ?? const <MedicationDose>[];
+    final eventsForSelectedDay =
+        _eventsForDay(_selectedDay, medicationDoses);
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
     final borderColor =
@@ -51,7 +81,12 @@ class _CalendarioPageState extends State<CalendarioPage> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _buildCalendar(context, cardColor, borderColor),
+              child: _buildCalendar(
+                context,
+                cardColor,
+                borderColor,
+                medicationDoses,
+              ),
             ),
             const SizedBox(height: 12),
             Padding(
@@ -68,27 +103,30 @@ class _CalendarioPageState extends State<CalendarioPage> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: _eventsForSelectedDay.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Nenhum evento neste dia.',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                      itemCount: _eventsForSelectedDay.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final event = _eventsForSelectedDay[index];
-                        return _EventTile(
-                          event: event,
-                          cardColor: cardColor,
-                          borderColor: borderColor,
-                          onTap: () => _onEventTap(context, event),
-                        );
-                      },
-                    ),
+              child: dosesAsync.isLoading && medicationDoses.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : eventsForSelectedDay.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Nenhum evento neste dia.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                          itemCount: eventsForSelectedDay.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final event = eventsForSelectedDay[index];
+                            return _EventTile(
+                              event: event,
+                              cardColor: cardColor,
+                              borderColor: borderColor,
+                              onTap: () => _onEventTap(context, event),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
@@ -105,6 +143,7 @@ class _CalendarioPageState extends State<CalendarioPage> {
     BuildContext context,
     Color cardColor,
     Color borderColor,
+    List<MedicationDose> medicationDoses,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -120,7 +159,7 @@ class _CalendarioPageState extends State<CalendarioPage> {
         calendarFormat: _calendarFormat,
         startingDayOfWeek: StartingDayOfWeek.monday,
         locale: 'pt_BR',
-        eventLoader: (day) => MockCalendarEvents.typesOnDay(day).toList(),
+        eventLoader: (day) => _typesOnDay(day, medicationDoses),
         calendarStyle: CalendarStyle(
           todayDecoration: BoxDecoration(
             color: AppTheme.primary.withValues(alpha: 0.25),

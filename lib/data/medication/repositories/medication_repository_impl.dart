@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../domain/medication/entities/medication_dose.dart';
 import '../../../domain/medication/entities/medication_doses_result.dart';
 import '../../../domain/medication/entities/medication_schedule_mode.dart';
 import '../../../domain/medication/entities/medication_summary.dart';
@@ -21,6 +22,19 @@ class MedicationRepositoryImpl implements MedicationRepository {
       patientId: patientId,
       day: day,
       includeOverdue: includeOverdue,
+    );
+  }
+
+  @override
+  Future<List<MedicationDose>> listDosesInRange({
+    required String patientId,
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
+  }) {
+    return _remote.listDosesInRange(
+      patientId: patientId,
+      rangeStart: rangeStart,
+      rangeEnd: rangeEnd,
     );
   }
 

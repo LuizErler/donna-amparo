@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/supabase/supabase_config.dart';
+import '../../../domain/medication/entities/medication_dose.dart';
 import '../../../domain/medication/entities/medication_doses_result.dart';
 import '../../../domain/medication/entities/medication_schedule_mode.dart';
 import '../../../domain/medication/entities/medication_skipped_reason.dart';
@@ -68,6 +69,45 @@ class MedicationRemoteDataSource {
       logsByKey: logsByKey,
       today: today,
       includeOverdue: includeOverdue,
+    );
+  }
+
+  Future<List<MedicationDose>> listDosesInRange({
+    required String patientId,
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
+  }) async {
+    final start = _dateOnly(rangeStart);
+    final end = _dateOnly(rangeEnd);
+
+    final rows = await _client
+        .from('medications')
+        .select(_medicationSelect)
+        .eq('patient_id', patientId)
+        .eq('is_active', true)
+        .order('name', ascending: true);
+
+    final logs = await _client
+        .from('medication_logs')
+        .select(
+            'id, medication_id, scheduled_for, scheduled_time, taken, skipped_reason')
+        .eq('patient_id', patientId)
+        .gte('scheduled_for', _formatDate(start))
+        .lte('scheduled_for', _formatDate(end));
+
+    final logsByKey = <String, Map<String, dynamic>>{};
+    for (final raw in logs as List<dynamic>) {
+      final row = raw as Map<String, dynamic>;
+      final key =
+          '${row['medication_id']}:${row['scheduled_for']}:${row['scheduled_time']}';
+      logsByKey[key] = row;
+    }
+
+    return MedicationDoseGenerator.dosesForRange(
+      medications: (rows as List<dynamic>).cast<Map<String, dynamic>>(),
+      logsByKey: logsByKey,
+      rangeStart: start,
+      rangeEnd: end,
     );
   }
 

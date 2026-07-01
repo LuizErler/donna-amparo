@@ -7,6 +7,7 @@ import '../../../domain/medication/entities/medication_dose.dart';
 import '../../../domain/medication/entities/medication_doses_result.dart';
 import '../../../domain/medication/entities/medication_summary.dart';
 import '../../../domain/medication/repositories/medication_repository.dart';
+import '../../calendar/providers/calendar_providers.dart';
 import '../../care/providers/care_providers.dart';
 
 final medicationRemoteDataSourceProvider =
@@ -50,6 +51,7 @@ final patientMedicationsProvider =
 void _invalidateMedicationViews(WidgetRef ref) {
   ref.invalidate(medicationDosesProvider);
   ref.invalidate(patientMedicationsProvider);
+  ref.invalidate(medicationCalendarDosesProvider);
 }
 
 Future<String?> toggleMedicationDoseTaken(
