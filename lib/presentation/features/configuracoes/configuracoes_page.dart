@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/text_size_provider.dart';
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/profile/entities/user_profile.dart';
@@ -19,6 +20,11 @@ class ConfiguracoesPage extends ConsumerStatefulWidget {
 }
 
 class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
+  // Itens reservados para versoes futuras do app.
+  static const _showLanguageOption = false;
+  static const _showAppVersion = false;
+  static const _showSupport = false;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -41,8 +47,13 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
             _buildSecaoPerfil(context, cardColor, cardBorderColor),
             const SizedBox(height: 28),
             _buildSecaoSistema(context, isDark, cardColor, cardBorderColor),
-            const SizedBox(height: 28),
-            _buildSecaoSobre(context, cardColor, cardBorderColor),
+            if (_showAppVersion || _showSupport) ...[
+              const SizedBox(height: 28),
+              _buildSecaoSobre(context, cardColor, cardBorderColor),
+            ],
+            const SizedBox(height: 32),
+            _buildBotaoSair(context),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -251,21 +262,92 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                   );
                 },
               ),
+              if (_showLanguageOption) ...[
+                Divider(height: 1, color: borderColor),
+                _buildItemSemContainer(
+                  context,
+                  icone: Icons.language_outlined,
+                  titulo: 'Idioma',
+                  subtitulo: 'Portugues (Brasil)',
+                  onTap: () {},
+                ),
+              ],
               Divider(height: 1, color: borderColor),
-              _buildItemSemContainer(
-                context,
-                icone: Icons.language_outlined,
-                titulo: 'Idioma',
-                subtitulo: 'Portugues (Brasil)',
-                onTap: () {},
-              ),
-              Divider(height: 1, color: borderColor),
-              _buildItemSemContainer(
-                context,
-                icone: Icons.text_fields_outlined,
-                titulo: 'Tamanho do texto',
-                subtitulo: 'Padrao',
-                onTap: () {},
+              Consumer(
+                builder: (context, ref, _) {
+                  final textSize = ref.watch(textSizeProvider);
+                  final isLarge = textSize == AppTextSize.large;
+
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.text_fields_outlined,
+                                color: AppTheme.primary,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Tamanho do texto',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
+                                  ),
+                                  Text(
+                                    isLarge ? 'Texto ampliado' : 'Padrao',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                        child: Row(
+                          children: [
+                            _buildThemeChip(
+                              context,
+                              label: 'Padrao',
+                              selecionado: !isLarge,
+                              onTap: () => ref
+                                  .read(textSizeProvider.notifier)
+                                  .setSize(AppTextSize.standard),
+                            ),
+                            const SizedBox(width: 8),
+                            _buildThemeChip(
+                              context,
+                              label: 'Grande',
+                              icone: Icons.format_size,
+                              selecionado: isLarge,
+                              onTap: () => ref
+                                  .read(textSizeProvider.notifier)
+                                  .setSize(AppTextSize.large),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -288,34 +370,52 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
           ),
           child: Column(
             children: [
-              _buildItemSemContainer(
-                context,
-                icone: Icons.info_outline,
-                titulo: 'Versao do app',
-                subtitulo: '1.0.0',
-                onTap: () {},
-              ),
-              Divider(height: 1, color: borderColor),
-              _buildItemSemContainer(
-                context,
-                icone: Icons.help_outline,
-                titulo: 'Ajuda e suporte',
-                subtitulo: 'Central de ajuda e contato',
-                onTap: () {},
-              ),
-              Divider(height: 1, color: borderColor),
-              _buildItemSemContainer(
-                context,
-                icone: Icons.logout,
-                titulo: 'Sair',
-                subtitulo: 'Encerrar sessao',
-                onTap: _sair,
-                cor: Colors.red.shade400,
-              ),
+              if (_showAppVersion) ...[
+                _buildItemSemContainer(
+                  context,
+                  icone: Icons.info_outline,
+                  titulo: 'Versao do app',
+                  subtitulo: '1.0.0',
+                  onTap: () {},
+                ),
+                if (_showSupport) Divider(height: 1, color: borderColor),
+              ],
+              if (_showSupport)
+                _buildItemSemContainer(
+                  context,
+                  icone: Icons.help_outline,
+                  titulo: 'Ajuda e suporte',
+                  subtitulo: 'Central de ajuda e contato',
+                  onTap: () {},
+                ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBotaoSair(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: _sair,
+        icon: Icon(Icons.logout, color: Colors.red.shade400, size: 20),
+        label: Text(
+          'Sair da conta',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.red.shade400,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: Colors.red.shade300),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
     );
   }
 
