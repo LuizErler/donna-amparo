@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/error_message_mapper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/medication/entities/medication_day_period.dart';
 import '../../../domain/medication/entities/medication_dose.dart';
@@ -9,6 +10,7 @@ import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../medication/add_medication_sheet.dart';
 import '../../medication/providers/medication_providers.dart';
+import '../../shared/app_snackbar.dart';
 import '../../shell/shell_page_header.dart';
 import 'medicamentos_gerenciar_page.dart';
 
@@ -56,7 +58,11 @@ class MedicamentosPage extends ConsumerWidget {
     final patient = await ref.read(activePatientProvider.future);
     if (!context.mounted) return;
     if (patient == null) {
-      _snack(context, 'Paciente nao encontrado.');
+      showAppSnack(
+        context,
+        'Paciente nao encontrado.',
+        variant: AppSnackVariant.error,
+      );
       return;
     }
 
@@ -66,23 +72,13 @@ class MedicamentosPage extends ConsumerWidget {
       patientId: patient.id,
     );
     if (!context.mounted || saved != true) return;
-    _snack(context, 'Medicamento cadastrado com sucesso.');
+    showAppSuccessSnack(context, 'Medicamento cadastrado com sucesso.');
   }
 
   void _openGerenciar(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const MedicamentosGerenciarPage(),
-      ),
-    );
-  }
-
-  void _snack(BuildContext context, String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red.shade700 : null,
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -98,10 +94,13 @@ class MedicamentosPage extends ConsumerWidget {
             subtitle: 'Doses do dia e confirmacoes.',
           ),
           const SizedBox(height: 24),
-          const Text('Nao foi possivel carregar os medicamentos.'),
-          const SizedBox(height: 8),
-          Text(error.toString(),
-              style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            mapErrorMessage(
+              error,
+              fallback: 'Nao foi possivel carregar os medicamentos.',
+            ),
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
         ],
       ),
     );
@@ -286,9 +285,9 @@ class MedicamentosPage extends ConsumerWidget {
     final error = await resolveAllOverdueDoses(ref, overdue: overdue);
     if (!context.mounted) return;
     if (error != null) {
-      _snack(context, error, isError: true);
+      showAppSnack(context, error, variant: AppSnackVariant.error);
     } else {
-      _snack(context, 'Doses registradas como nao tomadas.');
+      showAppSuccessSnack(context, 'Doses registradas como nao tomadas.');
     }
   }
 
@@ -555,7 +554,7 @@ class MedicamentosPage extends ConsumerWidget {
     );
     if (!context.mounted) return;
     if (error != null) {
-      _snack(context, error, isError: true);
+      showAppSnack(context, error, variant: AppSnackVariant.error);
     }
   }
 
@@ -567,9 +566,9 @@ class MedicamentosPage extends ConsumerWidget {
     final error = await markDoseNotTaken(ref, dose: dose);
     if (!context.mounted) return;
     if (error != null) {
-      _snack(context, error, isError: true);
+      showAppSnack(context, error, variant: AppSnackVariant.error);
     } else {
-      _snack(context, 'Registrada como nao tomada.');
+      showAppSuccessSnack(context, 'Registrada como nao tomada.');
     }
   }
 }

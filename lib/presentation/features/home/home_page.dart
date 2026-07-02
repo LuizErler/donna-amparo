@@ -7,6 +7,7 @@ import '../../../domain/medication/entities/medication_doses_result.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../medication/providers/medication_providers.dart';
+import '../../shared/app_snackbar.dart';
 import '../../shell/shell_page_header.dart';
 
 class HomePage extends ConsumerWidget {
@@ -166,17 +167,10 @@ class HomePage extends ConsumerWidget {
     );
     if (!context.mounted) return;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), behavior: SnackBarBehavior.floating),
-      );
+      showAppSnack(context, error, variant: AppSnackVariant.error);
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Dose confirmada.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    showAppSuccessSnack(context, 'Dose confirmada.');
   }
 
   Widget _buildMedicationCardShell(
