@@ -139,8 +139,12 @@ class FamiliaPage extends ConsumerWidget {
           Row(
             children: [
               OutlinedButton.icon(
-                onPressed: () =>
-                    showInviteMemberSheet(context, ref, patientId: patientId),
+                onPressed: () => showInviteMemberSheet(
+                  context,
+                  ref,
+                  patientId: patientId,
+                  mode: InviteShareMode.form,
+                ),
                 icon: const Icon(Icons.person_add_outlined,
                     size: 14, color: Colors.white),
                 label: const Text('Convidar membro',
@@ -155,10 +159,14 @@ class FamiliaPage extends ConsumerWidget {
               ),
               const SizedBox(width: 10),
               OutlinedButton.icon(
-                onPressed: () =>
-                    showInviteMemberSheet(context, ref, patientId: patientId),
-                icon: const Icon(Icons.link, size: 14, color: Colors.white),
-                label: const Text('Copiar link',
+                onPressed: () => showInviteMemberSheet(
+                  context,
+                  ref,
+                  patientId: patientId,
+                  mode: InviteShareMode.qrCode,
+                ),
+                icon: const Icon(Icons.qr_code, size: 14, color: Colors.white),
+                label: const Text('QR Code',
                     style: TextStyle(color: Colors.white, fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.white54),
