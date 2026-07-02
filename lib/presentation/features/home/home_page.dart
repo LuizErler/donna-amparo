@@ -8,6 +8,8 @@ import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../medication/providers/medication_providers.dart';
 import '../../shared/app_snackbar.dart';
+import '../../shared/widgets/app_card.dart';
+import '../../shared/widgets/loading_state_view.dart';
 import '../../shell/shell_page_header.dart';
 
 class HomePage extends ConsumerWidget {
@@ -72,16 +74,7 @@ class HomePage extends ConsumerWidget {
     return dosesAsync.when(
       loading: () => _buildMedicationCardShell(
         context,
-        body: const Center(
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Colors.white,
-            ),
-          ),
-        ),
+        body: const LoadingStateView(compact: true, indicatorColor: Colors.white),
       ),
       error: (_, _) => _buildMedicationCardShell(
         context,
@@ -238,14 +231,8 @@ class HomePage extends ConsumerWidget {
       orElse: () => 'paciente',
     );
 
-    return Container(
-      width: double.infinity,
+    return AppCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardNormal,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -313,14 +300,8 @@ class HomePage extends ConsumerWidget {
         Text('Proxima consulta',
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
+        AppCard(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.cardNormal,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.cardBorder),
-          ),
           child: Row(
             children: [
               Container(
@@ -387,14 +368,8 @@ class HomePage extends ConsumerWidget {
     required String descricao,
     required Color cor,
   }) {
-    return Container(
-      width: double.infinity,
+    return AppCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardNormal,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
