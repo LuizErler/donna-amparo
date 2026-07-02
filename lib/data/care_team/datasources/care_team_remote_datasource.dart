@@ -136,6 +136,11 @@ class CareTeamRemoteDataSource {
       if (message.contains('Usuario nao autenticado')) {
         return const AppException('Faca login para aceitar o convite.');
       }
+      if (message.contains('Voce ja e Cuidador Admin deste paciente')) {
+        return const AppException(
+          'Voce ja e Cuidador Admin deste paciente. Convites nao alteram seu papel.',
+        );
+      }
       return AppException(message);
     }
     if (error is AuthException) {
