@@ -11,6 +11,10 @@ import '../../care/providers/care_team_providers.dart';
 import '../../medication/add_medication_sheet.dart';
 import '../../medication/providers/medication_providers.dart';
 import '../../shared/app_snackbar.dart';
+import '../../shared/widgets/app_card.dart';
+import '../../shared/widgets/empty_state_view.dart';
+import '../../shared/widgets/error_state_view.dart';
+import '../../shared/widgets/loading_state_view.dart';
 import '../../shell/shell_page_header.dart';
 import 'medicamentos_gerenciar_page.dart';
 
@@ -33,7 +37,7 @@ class MedicamentosPage extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         child: dosesAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LoadingStateView(),
           error: (error, _) => _buildError(context, error),
           data: (result) => _buildContent(
             context,
@@ -85,7 +89,7 @@ class MedicamentosPage extends ConsumerWidget {
 
   Widget _buildError(BuildContext context, Object error) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -93,13 +97,14 @@ class MedicamentosPage extends ConsumerWidget {
             title: 'Medicamentos',
             subtitle: 'Doses do dia e confirmacoes.',
           ),
-          const SizedBox(height: 24),
-          Text(
-            mapErrorMessage(
+          ErrorStateView(
+            message: mapErrorMessage(
               error,
               fallback: 'Nao foi possivel carregar os medicamentos.',
             ),
-            style: Theme.of(context).textTheme.bodyLarge,
+            centered: false,
+            alignStart: true,
+            padding: const EdgeInsets.only(top: 24),
           ),
         ],
       ),
@@ -292,18 +297,12 @@ class MedicamentosPage extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardNormal,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
-      child: const Text(
-        'Nenhum medicamento cadastrado para hoje.\n'
-        'Toque em + para cadastrar o primeiro remedio.',
-      ),
+    return const EmptyStateView(
+      icon: Icons.medication_outlined,
+      title: 'Nenhum medicamento hoje',
+      message:
+          'Nenhum medicamento cadastrado para hoje.\n'
+          'Toque em + para cadastrar o primeiro remedio.',
     );
   }
 
@@ -411,23 +410,17 @@ class MedicamentosPage extends ConsumerWidget {
     bool canToggle,
   ) {
     final isOverdue = dose.isOverdue;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: dose.taken
-            ? Colors.green.shade50
-            : isOverdue
-                ? Colors.orange.shade50
-                : AppTheme.cardNormal,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: dose.taken
-              ? Colors.green.shade200
-              : isOverdue
-                  ? Colors.orange.shade200
-                  : AppTheme.cardBorder,
-        ),
-      ),
+    return AppCard(
+      color: dose.taken
+          ? Colors.green.shade50
+          : isOverdue
+              ? Colors.orange.shade50
+              : null,
+      borderColor: dose.taken
+          ? Colors.green.shade200
+          : isOverdue
+              ? Colors.orange.shade200
+              : null,
       child: Row(
         children: [
           GestureDetector(
