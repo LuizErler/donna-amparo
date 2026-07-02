@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/errors/app_exception.dart';
+import '../../../core/errors/guarded_action.dart';
 import '../../../data/medication/datasources/medication_remote_datasource.dart';
 import '../../../data/medication/repositories/medication_repository_impl.dart';
 import '../../../domain/medication/entities/medication_dose.dart';
@@ -65,22 +65,20 @@ Future<String?> toggleMedicationDoseTaken(
   final patient = await ref.read(activePatientProvider.future);
   if (patient == null) return 'Paciente nao encontrado.';
 
-  try {
-    await ref.read(medicationRepositoryProvider).setDoseTaken(
-          patientId: patient.id,
-          medicationId: medicationId,
-          scheduleId: scheduleId,
-          scheduledTime: scheduledTime,
-          day: scheduledFor,
-          taken: taken,
-        );
-    _invalidateMedicationViews(ref);
-    return null;
-  } on AppException catch (e) {
-    return e.message;
-  } catch (_) {
-    return 'Erro ao atualizar dose.';
-  }
+  return runGuarded(
+    () async {
+      await ref.read(medicationRepositoryProvider).setDoseTaken(
+            patientId: patient.id,
+            medicationId: medicationId,
+            scheduleId: scheduleId,
+            scheduledTime: scheduledTime,
+            day: scheduledFor,
+            taken: taken,
+          );
+      _invalidateMedicationViews(ref);
+    },
+    fallback: 'Erro ao atualizar dose.',
+  );
 }
 
 Future<String?> createMedication(
@@ -88,18 +86,16 @@ Future<String?> createMedication(
   required String patientId,
   required CreateMedicationInput input,
 }) async {
-  try {
-    await ref.read(medicationRepositoryProvider).createMedication(
-          patientId: patientId,
-          input: input,
-        );
-    _invalidateMedicationViews(ref);
-    return null;
-  } on AppException catch (e) {
-    return e.message;
-  } catch (_) {
-    return 'Erro ao cadastrar medicamento.';
-  }
+  return runGuarded(
+    () async {
+      await ref.read(medicationRepositoryProvider).createMedication(
+            patientId: patientId,
+            input: input,
+          );
+      _invalidateMedicationViews(ref);
+    },
+    fallback: 'Erro ao cadastrar medicamento.',
+  );
 }
 
 Future<String?> updateMedication(
@@ -107,18 +103,16 @@ Future<String?> updateMedication(
   required String patientId,
   required UpdateMedicationInput input,
 }) async {
-  try {
-    await ref.read(medicationRepositoryProvider).updateMedication(
-          patientId: patientId,
-          input: input,
-        );
-    _invalidateMedicationViews(ref);
-    return null;
-  } on AppException catch (e) {
-    return e.message;
-  } catch (_) {
-    return 'Erro ao atualizar medicamento.';
-  }
+  return runGuarded(
+    () async {
+      await ref.read(medicationRepositoryProvider).updateMedication(
+            patientId: patientId,
+            input: input,
+          );
+      _invalidateMedicationViews(ref);
+    },
+    fallback: 'Erro ao atualizar medicamento.',
+  );
 }
 
 Future<String?> deactivateMedication(
@@ -126,18 +120,16 @@ Future<String?> deactivateMedication(
   required String patientId,
   required int medicationId,
 }) async {
-  try {
-    await ref.read(medicationRepositoryProvider).deactivateMedication(
-          patientId: patientId,
-          medicationId: medicationId,
-        );
-    _invalidateMedicationViews(ref);
-    return null;
-  } on AppException catch (e) {
-    return e.message;
-  } catch (_) {
-    return 'Erro ao encerrar medicamento.';
-  }
+  return runGuarded(
+    () async {
+      await ref.read(medicationRepositoryProvider).deactivateMedication(
+            patientId: patientId,
+            medicationId: medicationId,
+          );
+      _invalidateMedicationViews(ref);
+    },
+    fallback: 'Erro ao encerrar medicamento.',
+  );
 }
 
 Future<String?> markDoseNotTaken(
@@ -147,21 +139,19 @@ Future<String?> markDoseNotTaken(
   final patient = await ref.read(activePatientProvider.future);
   if (patient == null) return 'Paciente nao encontrado.';
 
-  try {
-    await ref.read(medicationRepositoryProvider).markDoseNotTaken(
-          patientId: patient.id,
-          medicationId: dose.medicationId,
-          scheduleId: dose.scheduleId > 0 ? dose.scheduleId : null,
-          scheduledTime: dose.scheduledTime,
-          scheduledFor: dose.scheduledFor,
-        );
-    _invalidateMedicationViews(ref);
-    return null;
-  } on AppException catch (e) {
-    return e.message;
-  } catch (_) {
-    return 'Erro ao registrar dose nao tomada.';
-  }
+  return runGuarded(
+    () async {
+      await ref.read(medicationRepositoryProvider).markDoseNotTaken(
+            patientId: patient.id,
+            medicationId: dose.medicationId,
+            scheduleId: dose.scheduleId > 0 ? dose.scheduleId : null,
+            scheduledTime: dose.scheduledTime,
+            scheduledFor: dose.scheduledFor,
+          );
+      _invalidateMedicationViews(ref);
+    },
+    fallback: 'Erro ao registrar dose nao tomada.',
+  );
 }
 
 Future<String?> resolveAllOverdueDoses(
