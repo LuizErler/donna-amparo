@@ -1,67 +1,194 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../domain/appointment/entities/appointment.dart';
+import '../../../domain/appointment/entities/appointments_list_result.dart';
+import '../../appointment/add_appointment_sheet.dart';
+import '../../appointment/appointment_detail_sheet.dart';
+import '../../appointment/providers/appointment_providers.dart';
+import '../../appointment/widgets/appointment_highlight_card.dart';
+import '../../appointment/widgets/appointment_history_card.dart';
+import '../../appointment/widgets/appointment_upcoming_card.dart';
+import '../../care/providers/care_providers.dart';
+import '../../care/providers/care_team_providers.dart';
+import '../../shared/app_snackbar.dart';
+import '../../shared/widgets/async_state_view.dart';
+import '../../shared/widgets/empty_state_view.dart';
 import '../../shell/shell_page_header.dart';
 
-class ConsultasPage extends StatelessWidget {
+class ConsultasPage extends ConsumerWidget {
   const ConsultasPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appointmentsAsync = ref.watch(patientAppointmentsProvider);
+    final roleAsync = ref.watch(currentCareRoleProvider);
+    final canManage = roleAsync.maybeWhen(
+      data: (role) => role?.canCreateMedsAndAppointments ?? false,
+      orElse: () => false,
+    );
+
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
+        child: AsyncStateView<AppointmentsListResult>(
+          value: appointmentsAsync,
+          errorFallback: 'Nao foi possivel carregar as consultas.',
+          data: (result) => _buildContent(context, ref, result, canManage),
+        ),
+      ),
+      floatingActionButton: canManage
+          ? FloatingActionButton(
+              onPressed: () => _onAddAppointment(context, ref),
+              tooltip: 'Agendar consulta',
+              child: const Icon(Icons.add),
+            )
+          : null,
+    );
+  }
+
+  Future<void> _onAddAppointment(BuildContext context, WidgetRef ref) async {
+    final patient = await ref.read(activePatientProvider.future);
+    if (!context.mounted) return;
+    if (patient == null) {
+      showAppSnack(
+        context,
+        'Paciente nao encontrado.',
+        variant: AppSnackVariant.error,
+      );
+      return;
+    }
+
+    final saved = await showAddAppointmentSheet(
+      context,
+      ref,
+      patientId: patient.id,
+    );
+    if (!context.mounted || saved != true) return;
+    showAppSuccessSnack(context, 'Consulta agendada com sucesso.');
+  }
+
+  Future<void> _openAppointment(
+    BuildContext context,
+    WidgetRef ref,
+    Appointment appointment,
+    bool canManage,
+  ) async {
+    final patient = await ref.read(activePatientProvider.future);
+    if (!context.mounted) return;
+    if (patient == null) {
+      showAppSnack(
+        context,
+        'Paciente nao encontrado.',
+        variant: AppSnackVariant.error,
+      );
+      return;
+    }
+
+    final changed = await showAppointmentDetailSheet(
+      context,
+      ref,
+      patientId: patient.id,
+      appointment: appointment,
+      canManage: canManage,
+    );
+    if (!context.mounted || changed != true) return;
+    showAppSuccessSnack(context, 'Consulta atualizada.');
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    AppointmentsListResult result,
+    bool canManage,
+  ) {
+    if (result.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        children: const [
+          ShellPageHeader(
+            title: 'Consultas',
+            subtitle: 'Agenda medica e historico.',
+          ),
+          SizedBox(height: 48),
+          EmptyStateView(
+            icon: Icons.medical_services_outlined,
+            title: 'Nenhuma consulta',
+            message:
+                'Agende consultas e exames para acompanhar a agenda medica.',
+          ),
+        ],
+      );
+    }
+
+    final highlight = result.upcoming.isNotEmpty ? result.upcoming.first : null;
+    final otherUpcoming =
+        highlight != null ? result.upcoming.skip(1).toList() : result.upcoming;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(patientAppointmentsProvider);
+        await ref.read(patientAppointmentsProvider.future);
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(context),
+            if (result.upcoming.isNotEmpty) ...[
               const SizedBox(height: 28),
               _buildSection(
                 context,
                 titulo: 'Proximas',
                 children: [
-                  _buildCardDestaque(context),
-                  const SizedBox(height: 12),
-                  _buildCardNormal(
-                    context,
-                    especialidade: 'Geriatria',
-                    medico: 'Dr. Augusto Ramires',
-                    data: 'Terca, 1 de julho · 14:00',
-                    local: 'Consultorio particular — Rua das Acacias, 220',
-                  ),
+                  if (highlight != null) ...[
+                    AppointmentHighlightCard(
+                      appointment: highlight,
+                      onTap: () =>
+                          _openAppointment(context, ref, highlight, canManage),
+                    ),
+                    if (otherUpcoming.isNotEmpty) const SizedBox(height: 12),
+                  ],
+                  for (var i = 0; i < otherUpcoming.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 12),
+                    AppointmentUpcomingCard(
+                      appointment: otherUpcoming[i],
+                      onTap: () => _openAppointment(
+                        context,
+                        ref,
+                        otherUpcoming[i],
+                        canManage,
+                      ),
+                    ),
+                  ],
                 ],
               ),
+            ],
+            if (result.past.isNotEmpty) ...[
               const SizedBox(height: 28),
               _buildSection(
                 context,
                 titulo: 'Historico',
                 children: [
-                  _buildCardHistorico(
-                    context,
-                    especialidade: 'Oftalmologia',
-                    medico: 'Dra. Marta Yoshida',
-                    data: '10 de maio · 09:00',
-                    local: 'Hospital Sao Lucas',
-                    anotacao: 'Ajustar grau dos oculos. Retorno em 6 meses.',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCardHistorico(
-                    context,
-                    especialidade: 'Endocrinologia',
-                    medico: 'Dr. Pedro Salim',
-                    data: '22 de abril · 16:30',
-                    local: 'Clinica Endolife',
-                    anotacao: 'Manter Metformina. Solicitada hemoglobina glicada.',
-                  ),
+                  for (var i = 0; i < result.past.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 12),
+                    AppointmentHistoryCard(
+                      appointment: result.past[i],
+                      onTap: () => _openAppointment(
+                        context,
+                        ref,
+                        result.past[i],
+                        canManage,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
-          ),
+          ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -73,8 +200,11 @@ class ConsultasPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(BuildContext context,
-      {required String titulo, required List<Widget> children}) {
+  Widget _buildSection(
+    BuildContext context, {
+    required String titulo,
+    required List<Widget> children,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -82,221 +212,6 @@ class ConsultasPage extends StatelessWidget {
         const SizedBox(height: 12),
         ...children,
       ],
-    );
-  }
-
-  Widget _buildCardDestaque(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.primary,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today,
-                      color: Colors.white70, size: 16),
-                  const SizedBox(width: 8),
-                  Text('Cardiologia',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                          )),
-                ],
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text('PROXIMA',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                        )),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text('Dra. Helena Vasconcelos',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.white70)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(Icons.access_time, color: Colors.white70, size: 14),
-              const SizedBox(width: 6),
-              Text('Quinta, 19 de junho · 10:30',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      )),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined,
-                  color: Colors.white70, size: 14),
-              const SizedBox(width: 6),
-              Text('Clinica CorVida — Sala 304',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.white70)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white12,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text('Levar exames de sangue recentes.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardNormal(
-    BuildContext context, {
-    required String especialidade,
-    required String medico,
-    required String data,
-    required String local,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardNormal,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.calendar_today_outlined,
-                color: AppTheme.primary, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(especialidade,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(medico,
-                    style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 8),
-                Text(data,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
-                        )),
-                const SizedBox(height: 2),
-                Text(local,
-                    style: Theme.of(context).textTheme.labelMedium),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardHistorico(
-    BuildContext context, {
-    required String especialidade,
-    required String medico,
-    required String data,
-    required String local,
-    required String anotacao,
-  }) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppTheme.cardNormal,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(especialidade,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(medico,
-                    style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 4),
-                Text('$data · $local',
-                    style: Theme.of(context).textTheme.labelMedium),
-              ],
-            ),
-          ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.background,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.edit_note,
-                        size: 14, color: AppTheme.textSecondary),
-                    const SizedBox(width: 4),
-                    Text('ANOTACOES',
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
-                                )),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(anotacao,
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
