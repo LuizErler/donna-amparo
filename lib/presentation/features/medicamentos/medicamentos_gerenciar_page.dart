@@ -7,6 +7,8 @@ import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../medication/add_medication_sheet.dart';
 import '../../medication/providers/medication_providers.dart';
+import '../../shared/refresh_providers.dart';
+import '../../shared/widgets/pull_to_refresh_scroll_view.dart';
 
 class MedicamentosGerenciarPage extends ConsumerWidget {
   const MedicamentosGerenciarPage({super.key});
@@ -58,24 +60,29 @@ class MedicamentosGerenciarPage extends ConsumerWidget {
     List<MedicationSummary> meds,
     bool canManage,
   ) {
+    Future<void> onRefresh(WidgetRef ref) =>
+        refreshFutureProvider(ref, patientMedicationsProvider);
+
     if (meds.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
+      return PullToRefreshListView(
+        onRefresh: onRefresh,
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
             'Nenhum medicamento cadastrado.\n'
             'Toque em + para adicionar.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-        ),
+        ],
       );
     }
 
     final active = meds.where((m) => m.isActive).toList();
     final inactive = meds.where((m) => !m.isActive).toList();
 
-    return ListView(
+    return PullToRefreshListView(
+      onRefresh: onRefresh,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 88),
       children: [
         if (active.isNotEmpty) ...[

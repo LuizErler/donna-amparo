@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../domain/appointment/entities/appointment.dart';
+import '../../../domain/appointment/entities/appointments_list_result.dart';
+import '../../../domain/hydration/entities/hydration_status.dart';
 import '../../../domain/medication/entities/medication_dose.dart';
 import '../../../domain/medication/entities/medication_doses_result.dart';
+import '../../appointment/appointment_detail_sheet.dart';
+import '../../appointment/providers/appointment_providers.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
+import '../../hydration/providers/hydration_providers.dart';
 import '../../medication/providers/medication_providers.dart';
 import '../../shared/app_snackbar.dart';
 import '../../shared/widgets/app_card.dart';
@@ -19,9 +25,15 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final careAsync = ref.watch(careContextProvider);
     final dosesAsync = ref.watch(medicationDosesProvider);
+    final appointmentsAsync = ref.watch(patientAppointmentsProvider);
+    final hydrationAsync = ref.watch(hydrationStatusProvider);
     final roleAsync = ref.watch(currentCareRoleProvider);
     final canToggle = roleAsync.maybeWhen(
       data: (role) => role?.canLogDosesAndVitals ?? false,
+      orElse: () => false,
+    );
+    final canManageAppointments = roleAsync.maybeWhen(
+      data: (role) => role?.canCreateMedsAndAppointments ?? false,
       orElse: () => false,
     );
 
@@ -36,9 +48,20 @@ class HomePage extends ConsumerWidget {
               const SizedBox(height: 24),
               _buildCardProximoMedicamento(context, ref, dosesAsync, canToggle),
               const SizedBox(height: 24),
-              _buildHidratacao(context, careAsync),
+              _buildHidratacao(
+                context,
+                ref,
+                careAsync,
+                hydrationAsync,
+                canToggle,
+              ),
               const SizedBox(height: 24),
-              _buildProximaConsulta(context),
+              _buildProximaConsulta(
+                context,
+                ref,
+                appointmentsAsync,
+                canManageAppointments,
+              ),
               const SizedBox(height: 24),
               _buildPendenciasFamilia(context),
             ],
@@ -225,113 +248,275 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHidratacao(BuildContext context, AsyncValue<CareContext> careAsync) {
+  Widget _buildHidratacao(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<CareContext> careAsync,
+    AsyncValue<HydrationStatus> hydrationAsync,
+    bool canLog,
+  ) {
     final patientName = careAsync.maybeWhen(
       data: (ctx) => ctx.patientName,
       orElse: () => 'paciente',
     );
 
-    return AppCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.water_drop_outlined,
-                    color: Colors.blue, size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Hidratacao',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    Text('Ultimo registro ha 145 min',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Faz 145 minutos desde a ultima agua. Hora de oferecer um copo ao $patientName.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  child: const Text('Registrar agua'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Lembrete'),
-                ),
-              ),
-            ],
-          ),
-        ],
+    return hydrationAsync.when(
+      loading: () => AppCard(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              'Carregando hidratacao...',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
       ),
+      error: (_, _) => AppCard(
+        padding: const EdgeInsets.all(20),
+        child: Text(
+          'Nao foi possivel carregar a hidratacao.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ),
+      data: (status) {
+        final subtitle = status.lastLog == null
+            ? 'Sem registros ainda'
+            : 'Ultimo registro ${status.elapsedLabel.toLowerCase()}';
+        final messageColor = status.needsAttention
+            ? Colors.orange.shade800
+            : Theme.of(context).textTheme.bodyMedium?.color;
+
+        return AppCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      status.needsAttention
+                          ? Icons.water_drop
+                          : Icons.water_drop_outlined,
+                      color: status.needsAttention ? Colors.orange : Colors.blue,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Hidratacao',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        Text(subtitle,
+                            style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                status.messageForPatient(patientName),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: messageColor,
+                    ),
+              ),
+              if (canLog) ...[
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => _registerHydration(context, ref),
+                    child: const Text('Registrar agua'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildProximaConsulta(BuildContext context) {
+  Future<void> _registerHydration(BuildContext context, WidgetRef ref) async {
+    final error = await recordHydration(ref);
+    if (!context.mounted) return;
+    if (error != null) {
+      showAppSnack(context, error, variant: AppSnackVariant.error);
+      return;
+    }
+    showAppSuccessSnack(context, 'Hidratacao registrada.');
+  }
+
+  Widget _buildProximaConsulta(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<AppointmentsListResult> appointmentsAsync,
+    bool canManage,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Proxima consulta',
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
-        AppCard(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+        appointmentsAsync.when(
+          loading: () => AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                child: const Icon(Icons.local_hospital_outlined,
-                    color: AppTheme.primary, size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 14),
+                Text(
+                  'Carregando consultas...',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+          error: (_, _) => AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Nao foi possivel carregar a proxima consulta.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          data: (result) {
+            final next =
+                result.upcoming.isNotEmpty ? result.upcoming.first : null;
+            if (next == null) {
+              return AppCard(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    Text('Cardiologista — Dr. Mendes',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    Text('Quinta, 15:30 · Hospital Sao Lucas',
-                        style: Theme.of(context).textTheme.bodyMedium),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.local_hospital_outlined,
+                          color: AppTheme.primary, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        'Nenhuma consulta agendada.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
                   ],
                 ),
+              );
+            }
+
+            final subtitle = _appointmentSubtitle(next);
+
+            return AppCard(
+              padding: EdgeInsets.zero,
+              child: InkWell(
+                onTap: () => _openAppointment(context, ref, next, canManage),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.local_hospital_outlined,
+                            color: AppTheme.primary, size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _appointmentTitle(next),
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitle,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right,
+                          color: Theme.of(context).textTheme.bodyMedium?.color),
+                    ],
+                  ),
+                ),
               ),
-              Icon(Icons.chevron_right,
-                  color: Theme.of(context).textTheme.bodyMedium?.color),
-            ],
-          ),
+            );
+          },
         ),
       ],
     );
+  }
+
+  String _appointmentTitle(Appointment appointment) {
+    final specialty = appointment.displaySpecialty;
+    final doctor = appointment.displayDoctor;
+    if (doctor.isEmpty) return specialty;
+    return '$specialty — $doctor';
+  }
+
+  String _appointmentSubtitle(Appointment appointment) {
+    final location = appointment.displayLocation;
+    if (location.isEmpty) return appointment.scheduleLabel;
+    return '${appointment.scheduleLabel} · $location';
+  }
+
+  Future<void> _openAppointment(
+    BuildContext context,
+    WidgetRef ref,
+    Appointment appointment,
+    bool canManage,
+  ) async {
+    final patient = await ref.read(activePatientProvider.future);
+    if (!context.mounted) return;
+    if (patient == null) {
+      showAppSnack(
+        context,
+        'Paciente nao encontrado.',
+        variant: AppSnackVariant.error,
+      );
+      return;
+    }
+
+    final changed = await showAppointmentDetailSheet(
+      context,
+      ref,
+      patientId: patient.id,
+      appointment: appointment,
+      canManage: canManage,
+    );
+    if (!context.mounted || changed != true) return;
+    showAppSuccessSnack(context, 'Consulta atualizada.');
   }
 
   Widget _buildPendenciasFamilia(BuildContext context) {

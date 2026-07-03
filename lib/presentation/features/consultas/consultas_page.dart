@@ -12,8 +12,10 @@ import '../../appointment/widgets/appointment_upcoming_card.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../shared/app_snackbar.dart';
+import '../../shared/refresh_providers.dart';
 import '../../shared/widgets/async_state_view.dart';
 import '../../shared/widgets/empty_state_view.dart';
+import '../../shared/widgets/pull_to_refresh_scroll_view.dart';
 import '../../shell/shell_page_header.dart';
 
 class ConsultasPage extends ConsumerWidget {
@@ -101,9 +103,12 @@ class ConsultasPage extends ConsumerWidget {
     AppointmentsListResult result,
     bool canManage,
   ) {
+    Future<void> onRefresh(WidgetRef ref) =>
+        refreshFutureProvider(ref, patientAppointmentsProvider);
+
     if (result.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      return PullToRefreshListView(
+        onRefresh: onRefresh,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         children: const [
           ShellPageHeader(
@@ -125,70 +130,64 @@ class ConsultasPage extends ConsumerWidget {
     final otherUpcoming =
         highlight != null ? result.upcoming.skip(1).toList() : result.upcoming;
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(patientAppointmentsProvider);
-        await ref.read(patientAppointmentsProvider.future);
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            if (result.upcoming.isNotEmpty) ...[
-              const SizedBox(height: 28),
-              _buildSection(
-                context,
-                titulo: 'Proximas',
-                children: [
-                  if (highlight != null) ...[
-                    AppointmentHighlightCard(
-                      appointment: highlight,
-                      onTap: () =>
-                          _openAppointment(context, ref, highlight, canManage),
-                    ),
-                    if (otherUpcoming.isNotEmpty) const SizedBox(height: 12),
-                  ],
-                  for (var i = 0; i < otherUpcoming.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 12),
-                    AppointmentUpcomingCard(
-                      appointment: otherUpcoming[i],
-                      onTap: () => _openAppointment(
-                        context,
-                        ref,
-                        otherUpcoming[i],
-                        canManage,
-                      ),
-                    ),
-                  ],
+    return PullToRefreshScrollView(
+      onRefresh: onRefresh,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context),
+          if (result.upcoming.isNotEmpty) ...[
+            const SizedBox(height: 28),
+            _buildSection(
+              context,
+              titulo: 'Proximas',
+              children: [
+                if (highlight != null) ...[
+                  AppointmentHighlightCard(
+                    appointment: highlight,
+                    onTap: () =>
+                        _openAppointment(context, ref, highlight, canManage),
+                  ),
+                  if (otherUpcoming.isNotEmpty) const SizedBox(height: 12),
                 ],
-              ),
-            ],
-            if (result.past.isNotEmpty) ...[
-              const SizedBox(height: 28),
-              _buildSection(
-                context,
-                titulo: 'Historico',
-                children: [
-                  for (var i = 0; i < result.past.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 12),
-                    AppointmentHistoryCard(
-                      appointment: result.past[i],
-                      onTap: () => _openAppointment(
-                        context,
-                        ref,
-                        result.past[i],
-                        canManage,
-                      ),
+                for (var i = 0; i < otherUpcoming.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 12),
+                  AppointmentUpcomingCard(
+                    appointment: otherUpcoming[i],
+                    onTap: () => _openAppointment(
+                      context,
+                      ref,
+                      otherUpcoming[i],
+                      canManage,
                     ),
-                  ],
+                  ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ],
-        ),
+          if (result.past.isNotEmpty) ...[
+            const SizedBox(height: 28),
+            _buildSection(
+              context,
+              titulo: 'Historico',
+              children: [
+                for (var i = 0; i < result.past.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 12),
+                  AppointmentHistoryCard(
+                    appointment: result.past[i],
+                    onTap: () => _openAppointment(
+                      context,
+                      ref,
+                      result.past[i],
+                      canManage,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
