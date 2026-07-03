@@ -24,7 +24,9 @@ class CreateMedicationInput {
     this.endDate,
     this.scheduleMode = MedicationScheduleMode.fixedTimes,
     this.intervalHours,
+    this.intervalDays,
     this.anchorTime,
+    this.anchorDate,
   });
 
   final String name;
@@ -35,7 +37,9 @@ class CreateMedicationInput {
   final DateTime? endDate;
   final MedicationScheduleMode scheduleMode;
   final int? intervalHours;
+  final int? intervalDays;
   final TimeOfDay? anchorTime;
+  final DateTime? anchorDate;
 }
 
 class UpdateMedicationInput {
@@ -49,7 +53,9 @@ class UpdateMedicationInput {
     this.endDate,
     this.scheduleMode = MedicationScheduleMode.fixedTimes,
     this.intervalHours,
+    this.intervalDays,
     this.anchorTime,
+    this.anchorDate,
   });
 
   final int medicationId;
@@ -61,7 +67,9 @@ class UpdateMedicationInput {
   final DateTime? endDate;
   final MedicationScheduleMode scheduleMode;
   final int? intervalHours;
+  final int? intervalDays;
   final TimeOfDay? anchorTime;
+  final DateTime? anchorDate;
 }
 
 abstract class MedicationRepository {

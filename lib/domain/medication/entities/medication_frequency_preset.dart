@@ -15,6 +15,7 @@ enum MedicationFrequencyPreset {
     TimeOfDay(hour: 20, minute: 0),
   ]),
   interval('A cada X horas', []),
+  intervalDays('A cada X dias', []),
   custom('Personalizado', []);
 
   const MedicationFrequencyPreset(this.label, this.defaultTimes);

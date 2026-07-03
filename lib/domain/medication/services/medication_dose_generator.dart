@@ -152,6 +152,8 @@ class MedicationDoseGenerator {
     required List<String> scheduleTimes,
     int? intervalHours,
     String? anchorTime,
+    int? intervalDays,
+    String? anchorDate,
     int previewDays = 3,
   }) {
     final med = <String, dynamic>{
@@ -162,6 +164,8 @@ class MedicationDoseGenerator {
       'schedule_mode': scheduleMode.code,
       'interval_hours': intervalHours,
       'anchor_time': anchorTime,
+      'interval_days': intervalDays,
+      'anchor_date': anchorDate,
       'medication_schedules': scheduleTimes
           .map((t) => {'id': 0, 'time_of_day': t})
           .toList(),
@@ -188,7 +192,10 @@ class MedicationDoseGenerator {
     final mode =
         MedicationScheduleMode.fromCode(med['schedule_mode'] as String?);
     if (mode == MedicationScheduleMode.interval) {
-      return _intervalSlots(med, day);
+      return _intervalHoursSlots(med, day);
+    }
+    if (mode == MedicationScheduleMode.intervalDays) {
+      return _intervalDaysSlots(med, day);
     }
     return _fixedSlots(med, day);
   }
@@ -204,7 +211,7 @@ class MedicationDoseGenerator {
     }).toList();
   }
 
-  static List<_Slot> _intervalSlots(Map<String, dynamic> med, DateTime day) {
+  static List<_Slot> _intervalHoursSlots(Map<String, dynamic> med, DateTime day) {
     final intervalHours = med['interval_hours'] as int?;
     final anchorRaw = med['anchor_time'] as String?;
     final startStr = med['start_date'] as String?;
@@ -251,6 +258,42 @@ class MedicationDoseGenerator {
       cursor = cursor.add(Duration(hours: intervalHours));
     }
     return slots;
+  }
+
+  static List<_Slot> _intervalDaysSlots(Map<String, dynamic> med, DateTime day) {
+    final intervalDays = med['interval_days'] as int?;
+    final anchorDateRaw = med['anchor_date'] as String?;
+    final anchorTimeRaw = med['anchor_time'] as String?;
+    if (intervalDays == null ||
+        intervalDays < 1 ||
+        anchorDateRaw == null ||
+        anchorTimeRaw == null) {
+      return [];
+    }
+
+    final anchorDay = _dateOnly(DateTime.parse(anchorDateRaw));
+    final targetDay = _dateOnly(day);
+    if (targetDay.isBefore(anchorDay)) return [];
+
+    final diffDays = targetDay.difference(anchorDay).inDays;
+    if (diffDays % intervalDays != 0) return [];
+
+    return [
+      _Slot(
+        scheduleId: 0,
+        timeOfDay: _normalizeTimeOfDay(anchorTimeRaw),
+      ),
+    ];
+  }
+
+  static String _normalizeTimeOfDay(String raw) {
+    final parts = raw.split(':');
+    if (parts.length >= 2) {
+      final hour = int.tryParse(parts[0]) ?? 0;
+      final minute = int.tryParse(parts[1]) ?? 0;
+      return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:00';
+    }
+    return raw;
   }
 
   static bool _isMedActiveOnDay(Map<String, dynamic> med, DateTime day) {

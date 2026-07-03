@@ -12,7 +12,9 @@ class MedicationSummary {
     this.endDate,
     required this.scheduleMode,
     this.intervalHours,
+    this.intervalDays,
     this.anchorTime,
+    this.anchorDate,
     required this.scheduleTimes,
   });
 
@@ -25,12 +27,18 @@ class MedicationSummary {
   final DateTime? endDate;
   final MedicationScheduleMode scheduleMode;
   final int? intervalHours;
+  final int? intervalDays;
   final String? anchorTime;
+  final DateTime? anchorDate;
   final List<String> scheduleTimes;
 
   bool get isContinuous => endDate == null;
 
   String get frequencyLabel {
+    if (scheduleMode == MedicationScheduleMode.intervalDays &&
+        intervalDays != null) {
+      return 'A cada $intervalDays dia${intervalDays == 1 ? '' : 's'}';
+    }
     if (scheduleMode == MedicationScheduleMode.interval && intervalHours != null) {
       return 'A cada ${intervalHours}h';
     }
@@ -68,7 +76,9 @@ class MedicationSummary {
       scheduleMode:
           MedicationScheduleMode.fromCode(json['schedule_mode'] as String?),
       intervalHours: json['interval_hours'] as int?,
+      intervalDays: json['interval_days'] as int?,
       anchorTime: json['anchor_time'] as String?,
+      anchorDate: _parseDate(json['anchor_date'] as String?),
       scheduleTimes: times,
     );
   }

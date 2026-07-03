@@ -22,7 +22,9 @@ class MedicationRemoteDataSource {
     end_date,
     schedule_mode,
     interval_hours,
+    interval_days,
     anchor_time,
+    anchor_date,
     medication_schedules (
       id,
       time_of_day
@@ -186,7 +188,9 @@ class MedicationRemoteDataSource {
     DateTime? endDate,
     required MedicationScheduleMode scheduleMode,
     int? intervalHours,
+    int? intervalDays,
     String? anchorTime,
+    String? anchorDate,
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
@@ -204,7 +208,9 @@ class MedicationRemoteDataSource {
           endDate: endDate,
           scheduleMode: scheduleMode,
           intervalHours: intervalHours,
+          intervalDays: intervalDays,
           anchorTime: anchorTime,
+          anchorDate: anchorDate,
           createdBy: userId,
         ))
         .select('id')
@@ -229,7 +235,9 @@ class MedicationRemoteDataSource {
     DateTime? endDate,
     required MedicationScheduleMode scheduleMode,
     int? intervalHours,
+    int? intervalDays,
     String? anchorTime,
+    String? anchorDate,
   }) async {
     await _client
         .from('medications')
@@ -240,14 +248,13 @@ class MedicationRemoteDataSource {
           'start_date': _formatDate(startDate),
           'end_date': endDate != null ? _formatDate(endDate) : null,
           'schedule_mode': scheduleMode.code,
-          'interval_hours':
-              scheduleMode == MedicationScheduleMode.interval
-                  ? intervalHours
-                  : null,
-          'anchor_time':
-              scheduleMode == MedicationScheduleMode.interval
-                  ? anchorTime
-                  : null,
+          ..._scheduleFields(
+            scheduleMode: scheduleMode,
+            intervalHours: intervalHours,
+            intervalDays: intervalDays,
+            anchorTime: anchorTime,
+            anchorDate: anchorDate,
+          ),
         })
         .eq('id', medicationId)
         .eq('patient_id', patientId)
@@ -331,7 +338,9 @@ class MedicationRemoteDataSource {
     DateTime? endDate,
     required MedicationScheduleMode scheduleMode,
     int? intervalHours,
+    int? intervalDays,
     String? anchorTime,
+    String? anchorDate,
     required String createdBy,
   }) {
     return {
@@ -342,12 +351,47 @@ class MedicationRemoteDataSource {
       'start_date': _formatDate(startDate),
       'end_date': endDate != null ? _formatDate(endDate) : null,
       'schedule_mode': scheduleMode.code,
-      'interval_hours':
-          scheduleMode == MedicationScheduleMode.interval ? intervalHours : null,
-      'anchor_time':
-          scheduleMode == MedicationScheduleMode.interval ? anchorTime : null,
+      ..._scheduleFields(
+        scheduleMode: scheduleMode,
+        intervalHours: intervalHours,
+        intervalDays: intervalDays,
+        anchorTime: anchorTime,
+        anchorDate: anchorDate,
+      ),
       'created_by': createdBy,
     };
+  }
+
+  Map<String, dynamic> _scheduleFields({
+    required MedicationScheduleMode scheduleMode,
+    int? intervalHours,
+    int? intervalDays,
+    String? anchorTime,
+    String? anchorDate,
+  }) {
+    switch (scheduleMode) {
+      case MedicationScheduleMode.interval:
+        return {
+          'interval_hours': intervalHours,
+          'interval_days': null,
+          'anchor_time': anchorTime,
+          'anchor_date': null,
+        };
+      case MedicationScheduleMode.intervalDays:
+        return {
+          'interval_hours': null,
+          'interval_days': intervalDays,
+          'anchor_time': anchorTime,
+          'anchor_date': anchorDate,
+        };
+      case MedicationScheduleMode.fixedTimes:
+        return {
+          'interval_hours': null,
+          'interval_days': null,
+          'anchor_time': null,
+          'anchor_date': null,
+        };
+    }
   }
 
   AppException _mapError(Object error, String fallback) {
