@@ -19,6 +19,7 @@ import '../../shared/refresh_providers.dart';
 import '../../shared/widgets/pull_to_refresh_scroll_view.dart';
 import '../../shell/shell_page_header.dart';
 import 'medicamentos_gerenciar_page.dart';
+import 'widgets/medication_collapsible_section.dart';
 
 class MedicamentosPage extends ConsumerWidget {
   const MedicamentosPage({super.key});
@@ -121,15 +122,24 @@ class MedicamentosPage extends ConsumerWidget {
     bool canManage,
   ) {
     final today = result.today;
-    final morning = today
-        .where((d) => d.period == MedicationDayPeriod.morning)
-        .toList();
-    final afternoon = today
-        .where((d) => d.period == MedicationDayPeriod.afternoon)
-        .toList();
-    final evening = today
-        .where((d) => d.period == MedicationDayPeriod.evening)
-        .toList();
+    final periodSections = <Widget>[];
+
+    for (final period in MedicationDayPeriod.displayOrder) {
+      final doses = today.where((d) => d.period == period).toList();
+      if (doses.isEmpty) continue;
+
+      final allTaken = doses.every((d) => d.taken);
+      periodSections.add(
+        _buildPeriodo(
+          context,
+          ref,
+          period,
+          doses,
+          canToggle,
+          initiallyExpanded: !allTaken,
+        ),
+      );
+    }
 
     return PullToRefreshScrollView(
       onRefresh: (ref) => refreshFutureProvider(ref, medicationDosesProvider),
@@ -167,38 +177,10 @@ class MedicamentosPage extends ConsumerWidget {
           else if (today.isNotEmpty) ...[
             _buildProgresso(context, result.takenToday, result.totalToday),
             const SizedBox(height: 28),
-            if (morning.isNotEmpty)
-              _buildPeriodo(
-                context,
-                ref,
-                MedicationDayPeriod.morning,
-                Icons.wb_sunny_outlined,
-                morning,
-                canToggle,
-              ),
-            if (morning.isNotEmpty &&
-                (afternoon.isNotEmpty || evening.isNotEmpty))
-              const SizedBox(height: 20),
-            if (afternoon.isNotEmpty)
-              _buildPeriodo(
-                context,
-                ref,
-                MedicationDayPeriod.afternoon,
-                Icons.wb_cloudy_outlined,
-                afternoon,
-                canToggle,
-              ),
-            if (afternoon.isNotEmpty && evening.isNotEmpty)
-              const SizedBox(height: 20),
-            if (evening.isNotEmpty)
-              _buildPeriodo(
-                context,
-                ref,
-                MedicationDayPeriod.evening,
-                Icons.nightlight_outlined,
-                evening,
-                canToggle,
-              ),
+            for (var i = 0; i < periodSections.length; i++) ...[
+              if (i > 0) const SizedBox(height: 20),
+              periodSections[i],
+            ],
           ],
           const SizedBox(height: 20),
         ],
@@ -212,52 +194,38 @@ class MedicamentosPage extends ConsumerWidget {
     List<MedicationDose> overdue,
     bool canToggle,
   ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.warningSurface(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.warningBorder(context)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.warning_amber_rounded,
-                  color: AppTheme.warningForeground(context), size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${overdue.length} dose${overdue.length > 1 ? 's' : ''} atrasada${overdue.length > 1 ? 's' : ''}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.warningForegroundStrong(context),
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
+    return MedicationCollapsibleSection(
+      title: '${overdue.length} dose${overdue.length > 1 ? 's' : ''} atrasada${overdue.length > 1 ? 's' : ''}',
+      icon: Icons.warning_amber_rounded,
+      initiallyExpanded: true,
+      trailing: canToggle
+          ? TextButton(
+              onPressed: () => _resolveOverdue(context, ref, overdue),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.warningForegroundStrong(context),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              if (canToggle)
-                TextButton(
-                  onPressed: () => _resolveOverdue(context, ref, overdue),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.warningForegroundStrong(context),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text('Resolver'),
-                ),
+              child: const Text('Resolver'),
+            )
+          : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.warningSurface(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.warningBorder(context)),
+        ),
+        child: Column(
+          children: [
+            for (var i = 0; i < overdue.length; i++) ...[
+              if (i > 0) const SizedBox(height: 10),
+              _buildCardMedicamento(context, ref, overdue[i], canToggle),
             ],
-          ),
-          const SizedBox(height: 12),
-          ...overdue.map(
-            (dose) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _buildCardMedicamento(context, ref, dose, canToggle),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -365,44 +333,46 @@ class MedicamentosPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     MedicationDayPeriod period,
-    IconData icone,
     List<MedicationDose> lista,
-    bool canToggle,
-  ) {
+    bool canToggle, {
+    required bool initiallyExpanded,
+  }) {
     final todosTomados = lista.every((d) => d.taken);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icone, size: 18, color: AppTheme.onSurfaceSecondary(context)),
-            const SizedBox(width: 6),
-            Text(period.label, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(width: 8),
-            if (todosTomados)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.successSurface(context),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text('Completo',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: AppTheme.successForeground(context),
-                          fontWeight: FontWeight.w600,
-                        )),
+    final pendentes = lista.where((d) => !d.taken).length;
+
+    return MedicationCollapsibleSection(
+      title: period.label,
+      icon: period.icon,
+      initiallyExpanded: initiallyExpanded,
+      trailing: todosTomados
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.successSurface(context),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Text(
+                'Completo',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppTheme.successForeground(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            )
+          : Text(
+              '$pendentes pendente${pendentes > 1 ? 's' : ''}',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppTheme.onSurfaceSecondary(context),
+                  ),
+            ),
+      child: Column(
+        children: [
+          for (var i = 0; i < lista.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            _buildCardMedicamento(context, ref, lista[i], canToggle),
           ],
-        ),
-        const SizedBox(height: 10),
-        ...lista.map(
-          (dose) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _buildCardMedicamento(context, ref, dose, canToggle),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
