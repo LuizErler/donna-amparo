@@ -26,6 +26,22 @@ class MedicationDosesResult {
     return pending.isEmpty ? null : pending.first;
   }
 
+  /// Todas as doses ainda nao confirmadas (inclui horarios futuros de hoje).
+  List<MedicationDose> get scheduledPendingDoses {
+    final pending = [
+      ...overdue,
+      ...today.where((d) => !d.taken && !d.isMarkedNotTaken),
+    ];
+    pending.sort(_compareDoses);
+    return pending;
+  }
+
+  /// Proxima dose no radar (atrasada ou futura de hoje).
+  MedicationDose? get nextScheduledDose {
+    final pending = scheduledPendingDoses;
+    return pending.isEmpty ? null : pending.first;
+  }
+
   static int _compareDoses(MedicationDose a, MedicationDose b) {
     final dateCmp = a.scheduledFor.compareTo(b.scheduledFor);
     if (dateCmp != 0) return dateCmp;

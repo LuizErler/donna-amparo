@@ -112,13 +112,16 @@ class HomePage extends ConsumerWidget {
         subtitle: 'Não foi possível carregar as doses.',
       ),
       data: (result) {
-        final next = result.nextPendingDose;
+        final next = result.nextScheduledDose;
         if (next == null) {
           return _buildMedicationCardShell(
             context,
-            subtitle: 'Nenhuma dose pendente no momento.',
+            subtitle: result.today.isEmpty && result.overdue.isEmpty
+                ? 'Nenhum medicamento agendado para hoje.'
+                : 'Todas as doses de hoje foram confirmadas.',
           );
         }
+        final canConfirmNow = canToggle && next.isDueNow;
         return _buildMedicationCardShell(
           context,
           title: next.isPastDayOverdue || next.isLateToday
@@ -147,7 +150,7 @@ class HomePage extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              if (canToggle) ...[
+              if (canConfirmNow) ...[
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
@@ -178,7 +181,7 @@ class HomePage extends ConsumerWidget {
     if (dose.isLateToday) {
       return 'Atrasada · ${dose.timeLabel}';
     }
-    return 'as ${dose.timeLabel}';
+    return 'às ${dose.timeLabel}';
   }
 
   Future<void> _confirmDose(
