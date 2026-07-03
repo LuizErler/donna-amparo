@@ -27,9 +27,9 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final cardBorderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final cardColor = AppTheme.cardSurface(context);
+    final cardBorderColor = AppTheme.cardOutline(context);
+    final isDark = AppTheme.isDark(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -84,7 +84,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
             cardColor,
             borderColor,
             initials: '?',
-            nome: 'Perfil indisponivel',
+            nome: 'Perfil indisponível',
             subtitulo: 'Tente novamente mais tarde',
             roleLabel: '—',
           ),
@@ -118,8 +118,8 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
           cardColor: cardColor,
           borderColor: borderColor,
           icone: Icons.people_outline,
-          titulo: 'Circulo familiar',
-          subtitulo: 'Membros, convites e papeis',
+          titulo: 'Círculo familiar',
+          subtitulo: 'Membros, convites e papéis',
           onTap: () => openCirculoFamiliar(context),
         ),
         const SizedBox(height: 10),
@@ -128,7 +128,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
           cardColor: cardColor,
           borderColor: borderColor,
           icone: Icons.notifications_outlined,
-          titulo: 'Notificacoes',
+          titulo: 'Notificações',
           subtitulo: 'Alertas, lembretes e avisos',
           onTap: () {},
         ),
@@ -203,7 +203,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Aparencia',
+                                  Text('Aparência',
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium),
@@ -268,7 +268,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                   context,
                   icone: Icons.language_outlined,
                   titulo: 'Idioma',
-                  subtitulo: 'Portugues (Brasil)',
+                  subtitulo: 'Português (Brasil)',
                   onTap: () {},
                 ),
               ],
@@ -309,7 +309,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                                         .titleMedium,
                                   ),
                                   Text(
-                                    isLarge ? 'Texto ampliado' : 'Padrao',
+                                    isLarge ? 'Texto ampliado' : 'Padrão',
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyMedium,
@@ -326,7 +326,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                           children: [
                             _buildThemeChip(
                               context,
-                              label: 'Padrao',
+                              label: 'Padrão',
                               selecionado: !isLarge,
                               onTap: () => ref
                                   .read(textSizeProvider.notifier)
@@ -374,7 +374,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
                 _buildItemSemContainer(
                   context,
                   icone: Icons.info_outline,
-                  titulo: 'Versao do app',
+                  titulo: 'Versão do app',
                   subtitulo: '1.0.0',
                   onTap: () {},
                 ),
@@ -515,7 +515,7 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
           color: selecionado ? AppTheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selecionado ? AppTheme.primary : AppTheme.cardBorder,
+            color: selecionado ? AppTheme.primary : AppTheme.cardOutline(context),
           ),
         ),
         child: Row(

@@ -156,7 +156,7 @@ class _ReminderRow extends StatelessWidget {
           if (canRemove && onRemove != null)
             IconButton(
               icon: const Icon(Icons.remove_circle_outline, size: 20),
-              color: AppTheme.textSecondary,
+              color: AppTheme.onSurfaceSecondary(context),
               onPressed: enabled ? onRemove : null,
               tooltip: 'Remover',
             ),

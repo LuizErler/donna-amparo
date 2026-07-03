@@ -13,13 +13,19 @@ class _AlertasPageState extends State<AlertasPage> {
   String _filtroSelecionado = 'Todas';
 
   static const List<String> _filtros = [
-    'Todas', 'Medicamentos', 'Consultas', 'Vitais', 'Hidratacao', 'Familia'
+    'Todas',
+    'Medicamentos',
+    'Consultas',
+    'Vitais',
+    'Hidratação',
+    'Família',
   ];
 
   static const List<_Alerta> _atencao = [
     _Alerta(
-      titulo: 'Losartana das 20h ainda nao confirmada',
-      descricao: 'O Sr. Joaquim ainda nao tomou o medicamento das 20h. Alguem pode verificar?',
+      titulo: 'Losartana das 20h ainda não confirmada',
+      descricao:
+          'O Sr. Joaquim ainda não tomou o medicamento das 20h. Alguém pode verificar?',
       hora: '20:42',
       icone: Icons.medication_outlined,
       categoria: 'Medicamentos',
@@ -27,42 +33,43 @@ class _AlertasPageState extends State<AlertasPage> {
     ),
     _Alerta(
       titulo: 'Consulta de Cardiologia se aproxima',
-      descricao: 'Quinta, 19 de junho as 10:30 com a Dra. Helena Vasconcelos.',
+      descricao: 'Quinta, 19 de junho às 10:30 com a Dra. Helena Vasconcelos.',
       hora: 'Hoje, 09:00',
       icone: Icons.calendar_today_outlined,
       categoria: 'Consultas',
       resolvido: false,
     ),
     _Alerta(
-      titulo: 'Lembrete de hidratacao',
-      descricao: 'Sr. Joaquim nao registra ingestao de agua ha mais de 2 horas. Oferecer um copo agora ajuda a manter o ritmo do dia.',
+      titulo: 'Lembrete de hidratação',
+      descricao:
+          'Sr. Joaquim não registra ingestão de água há mais de 2 horas. Oferecer um copo agora ajuda a manter o ritmo do dia.',
       hora: '19:45',
       icone: Icons.water_drop_outlined,
-      categoria: 'Hidratacao',
+      categoria: 'Hidratação',
       resolvido: false,
     ),
   ];
 
   static const List<_Alerta> _resolvidos = [
     _Alerta(
-      titulo: 'Pressao arterial dentro do esperado',
-      descricao: 'Karina registrou 128 x 82 mmHg as 14:30.',
+      titulo: 'Pressão arterial dentro do esperado',
+      descricao: 'Karina registrou 128 x 82 mmHg às 14:30.',
       hora: '14:30',
       icone: Icons.check_circle_outline,
       categoria: 'Vitais',
       resolvido: true,
     ),
     _Alerta(
-      titulo: 'Rafael entrou no Circulo Familiar',
+      titulo: 'Rafael entrou no Círculo Familiar',
       descricao: 'Convite aceito. Papel definido como observador.',
       hora: 'Ontem',
       icone: Icons.check_circle_outline,
-      categoria: 'Familia',
+      categoria: 'Família',
       resolvido: true,
     ),
     _Alerta(
       titulo: 'Metformina das 19h confirmada',
-      descricao: 'Karina registrou a confirmacao as 19:00.',
+      descricao: 'Karina registrou a confirmação às 19:00.',
       hora: '19:00',
       icone: Icons.check_circle_outline,
       categoria: 'Medicamentos',
@@ -94,7 +101,7 @@ class _AlertasPageState extends State<AlertasPage> {
               if (atencaoFiltrado.isNotEmpty) ...[
                 _buildSecaoAlertas(
                   context,
-                  titulo: 'Atencao (${atencaoFiltrado.length})',
+                  titulo: 'Atenção (${atencaoFiltrado.length})',
                   alertas: atencaoFiltrado,
                 ),
                 const SizedBox(height: 28),
@@ -114,8 +121,8 @@ class _AlertasPageState extends State<AlertasPage> {
 
   Widget _buildHeader(BuildContext context) {
     return const ShellPageHeader(
-      title: 'Alertas da Familia',
-      subtitle: 'Pendencias e itens resolvidos.',
+      title: 'Alertas da Família',
+      subtitle: 'Pendências e itens resolvidos.',
     );
   }
 
@@ -125,7 +132,7 @@ class _AlertasPageState extends State<AlertasPage> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: _filtros.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
           final selecionado = _filtros[i] == _filtroSelecionado;
           return GestureDetector(
@@ -134,10 +141,14 @@ class _AlertasPageState extends State<AlertasPage> {
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: selecionado ? AppTheme.primary : AppTheme.cardNormal,
+                color: selecionado
+                    ? AppTheme.primary
+                    : AppTheme.cardSurface(context),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: selecionado ? AppTheme.primary : AppTheme.cardBorder,
+                  color: selecionado
+                      ? AppTheme.primary
+                      : AppTheme.cardOutline(context),
                 ),
               ),
               child: Text(
@@ -145,10 +156,9 @@ class _AlertasPageState extends State<AlertasPage> {
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: selecionado
                           ? Colors.white
-                          : AppTheme.textSecondary,
-                      fontWeight: selecionado
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                          : AppTheme.onSurfaceSecondary(context),
+                      fontWeight:
+                          selecionado ? FontWeight.bold : FontWeight.normal,
                     ),
               ),
             ),
@@ -158,28 +168,36 @@ class _AlertasPageState extends State<AlertasPage> {
     );
   }
 
-  Widget _buildSecaoAlertas(BuildContext context,
-      {required String titulo, required List<_Alerta> alertas}) {
+  Widget _buildSecaoAlertas(
+    BuildContext context, {
+    required String titulo,
+    required List<_Alerta> alertas,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(titulo, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
-        ...alertas.map((a) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _buildCardAlerta(context, a),
-            )),
+        ...alertas.map(
+          (a) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _buildCardAlerta(context, a),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildCardAlerta(BuildContext context, _Alerta alerta) {
-    final corIcone = alerta.resolvido ? Colors.green : AppTheme.primary;
+    final corIcone = alerta.resolvido
+        ? AppTheme.successForeground(context)
+        : AppTheme.primary;
     final corFundo = alerta.resolvido
-        ? Colors.green.shade50
-        : AppTheme.cardNormal;
-    final corBorda =
-        alerta.resolvido ? Colors.green.shade200 : AppTheme.cardBorder;
+        ? AppTheme.successSurface(context)
+        : AppTheme.cardSurface(context);
+    final corBorda = alerta.resolvido
+        ? AppTheme.successBorder(context)
+        : AppTheme.cardOutline(context);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -204,16 +222,22 @@ class _AlertasPageState extends State<AlertasPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(alerta.titulo,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        )),
+                Text(
+                  alerta.titulo,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
                 const SizedBox(height: 4),
-                Text(alerta.descricao,
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  alerta.descricao,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 const SizedBox(height: 4),
-                Text(alerta.hora,
-                    style: Theme.of(context).textTheme.labelMedium),
+                Text(
+                  alerta.hora,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
               ],
             ),
           ),

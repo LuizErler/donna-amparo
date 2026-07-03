@@ -12,7 +12,7 @@ class FamiliaPage extends ConsumerWidget {
   const FamiliaPage({super.key});
 
   static const List<_Atividade> _atividades = [
-    _Atividade(autor: 'Karina', acao: 'registrou a pressao arterial (128 x 82)', hora: '14:30'),
+    _Atividade(autor: 'Karina', acao: 'registrou a pressão arterial (128 x 82)', hora: '14:30'),
     _Atividade(autor: 'Sr. Joaquim', acao: 'confirmou Losartana das 08:00', hora: '06:05'),
     _Atividade(autor: 'Rafael', acao: 'adicionou consulta com Dr. Augusto', hora: 'Ontem, 18:12'),
     _Atividade(autor: 'Luiza', acao: 'deixou um recado na agenda', hora: 'Ontem, 12:00'),
@@ -26,7 +26,7 @@ class FamiliaPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Circulo Familiar'),
+        title: const Text('Círculo Familiar'),
       ),
       body: SafeArea(
         child: careAsync.when(
@@ -49,7 +49,7 @@ class FamiliaPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Quem esta acompanhando ${ctx.patientName}.',
+                    'Quem está acompanhando ${ctx.patientName}.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 24),
@@ -125,12 +125,12 @@ class FamiliaPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Convide alguem da familia',
+          Text('Convide alguém da família',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                   )),
           const SizedBox(height: 6),
-          Text('Compartilhe o cuidado com mais pessoas de confianca.',
+          Text('Compartilhe o cuidado com mais pessoas de confiança.',
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -225,7 +225,7 @@ class FamiliaPage extends ConsumerWidget {
     CareTeamMember member,
   ) {
     final color = _memberColor(member.profileId);
-    final status = member.isCurrentUser ? 'Voce' : 'Membro ativo';
+    final status = member.isCurrentUser ? 'Você' : 'Membro ativo';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -331,7 +331,7 @@ class FamiliaPage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Atividade da familia',
+        Text('Atividade da família',
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
         Text('Em breve — feed em tempo real.',
