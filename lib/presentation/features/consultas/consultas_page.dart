@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/appointment/entities/appointment.dart';
 import '../../../domain/appointment/entities/appointments_list_result.dart';
+import '../../appointment/add_appointment_sheet.dart';
 import '../../appointment/providers/appointment_providers.dart';
+import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../shared/app_snackbar.dart';
 import '../../shared/widgets/async_state_view.dart';
@@ -33,7 +35,7 @@ class ConsultasPage extends ConsumerWidget {
       ),
       floatingActionButton: canManage
           ? FloatingActionButton(
-              onPressed: () => _onAddAppointment(context),
+              onPressed: () => _onAddAppointment(context, ref),
               tooltip: 'Agendar consulta',
               child: const Icon(Icons.add),
             )
@@ -41,12 +43,25 @@ class ConsultasPage extends ConsumerWidget {
     );
   }
 
-  void _onAddAppointment(BuildContext context) {
-    showAppSnack(
+  Future<void> _onAddAppointment(BuildContext context, WidgetRef ref) async {
+    final patient = await ref.read(activePatientProvider.future);
+    if (!context.mounted) return;
+    if (patient == null) {
+      showAppSnack(
+        context,
+        'Paciente nao encontrado.',
+        variant: AppSnackVariant.error,
+      );
+      return;
+    }
+
+    final saved = await showAddAppointmentSheet(
       context,
-      'Agendamento de consultas em breve.',
-      variant: AppSnackVariant.info,
+      ref,
+      patientId: patient.id,
     );
+    if (!context.mounted || saved != true) return;
+    showAppSuccessSnack(context, 'Consulta agendada com sucesso.');
   }
 
   Widget _buildContent(

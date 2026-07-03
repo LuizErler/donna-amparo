@@ -51,4 +51,28 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       rangeEnd: rangeEnd,
     );
   }
+
+  @override
+  Future<void> createAppointment({
+    required String patientId,
+    required CreateAppointmentInput input,
+  }) {
+    return _remote.createAppointment(
+      patientId: patientId,
+      specialty: input.specialty.trim(),
+      appointmentDate: input.appointmentDate,
+      doctor: _trimOrNull(input.doctor),
+      location: _trimOrNull(input.location),
+      visitType: input.visitType.code,
+      notes: _trimOrNull(input.notes),
+      reminder24h: input.reminder24h,
+      notifyTeam: input.notifyTeam,
+    );
+  }
+
+  String? _trimOrNull(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
 }

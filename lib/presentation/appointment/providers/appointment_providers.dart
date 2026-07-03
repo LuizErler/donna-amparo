@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/guarded_action.dart';
 import '../../../data/appointment/datasources/appointment_remote_datasource.dart';
 import '../../../data/appointment/repositories/appointment_repository_impl.dart';
 import '../../../domain/appointment/entities/appointment.dart';
@@ -44,3 +45,25 @@ final appointmentsInRangeProvider = FutureProvider.family<
         rangeEnd: range.end,
       );
 });
+
+void _invalidateAppointmentViews(WidgetRef ref) {
+  ref.invalidate(patientAppointmentsProvider);
+  ref.invalidate(appointmentsInRangeProvider);
+}
+
+Future<String?> createAppointment(
+  WidgetRef ref, {
+  required String patientId,
+  required CreateAppointmentInput input,
+}) async {
+  return runGuarded(
+    () async {
+      await ref.read(appointmentRepositoryProvider).createAppointment(
+            patientId: patientId,
+            input: input,
+          );
+      _invalidateAppointmentViews(ref);
+    },
+    fallback: 'Erro ao agendar consulta.',
+  );
+}
