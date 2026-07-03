@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/appointment/entities/appointment.dart';
+import '../../../domain/appointment/entities/appointment_reminder_offset.dart';
 import '../../../domain/appointment/entities/appointment_visit_type.dart';
 import '../../../domain/appointment/repositories/appointment_repository.dart';
 import 'providers/appointment_providers.dart';
+import 'widgets/appointment_reminder_picker_section.dart';
 
 Future<bool?> showAppointmentFormSheet(
   BuildContext context,
@@ -59,7 +61,10 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
   late DateTime _scheduledDate;
   late TimeOfDay _scheduledTime;
   AppointmentVisitType _visitType = AppointmentVisitType.consulta;
-  bool _reminder24h = true;
+  List<AppointmentReminderOffset> _personalReminders =
+      List<AppointmentReminderOffset>.from(
+    AppointmentReminderOffset.defaultPersonal,
+  );
   bool _notifyTeam = false;
   bool _loading = false;
 
@@ -73,7 +78,11 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
       _locationController.text = existing.location ?? '';
       _notesController.text = existing.notes ?? '';
       _visitType = AppointmentVisitType.fromCode(existing.visitType);
-      _reminder24h = existing.reminder24h;
+      _personalReminders = List<AppointmentReminderOffset>.from(
+        existing.personalReminders.isNotEmpty
+            ? existing.personalReminders
+            : existing.teamNotifyReminders,
+      );
       _notifyTeam = existing.notifyTeam;
       final date = existing.appointmentDate?.toLocal() ?? _defaultSchedule();
       _scheduledDate = DateTime(date.year, date.month, date.day);
@@ -183,8 +192,10 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
           location: location.isEmpty ? null : location,
           visitType: _visitType,
           notes: notes.isEmpty ? null : notes,
-          reminder24h: _reminder24h,
-          notifyTeam: _notifyTeam,
+          personalReminders: _personalReminders,
+          teamNotifyReminders: _notifyTeam
+              ? List<AppointmentReminderOffset>.from(_personalReminders)
+              : const [],
         ),
       );
     } else {
@@ -198,8 +209,10 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
           location: location.isEmpty ? null : location,
           visitType: _visitType,
           notes: notes.isEmpty ? null : notes,
-          reminder24h: _reminder24h,
-          notifyTeam: _notifyTeam,
+          personalReminders: _personalReminders,
+          teamNotifyReminders: _notifyTeam
+              ? List<AppointmentReminderOffset>.from(_personalReminders)
+              : const [],
         ),
       );
     }
@@ -361,21 +374,16 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Lembrete 24h antes'),
-                subtitle: const Text('Para voce, no app (em breve push)'),
-                value: _reminder24h,
-                onChanged:
-                    _loading ? null : (v) => setState(() => _reminder24h = v),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Avisar a familia'),
-                subtitle: const Text('Notificar o circulo de cuidado'),
-                value: _notifyTeam,
-                onChanged:
-                    _loading ? null : (v) => setState(() => _notifyTeam = v),
+              AppointmentReminderPickerSection(
+                title: 'Alertas',
+                subtitle: 'Lembretes antes da consulta',
+                offsets: _personalReminders,
+                enabled: !_loading,
+                onChanged: (next) =>
+                    setState(() => _personalReminders = next),
+                notifyFamily: _notifyTeam,
+                onNotifyFamilyChanged: (on) =>
+                    setState(() => _notifyTeam = on),
               ),
               const SizedBox(height: 20),
               SizedBox(
