@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/appointment/entities/appointment.dart';
 import '../../../domain/appointment/entities/appointments_list_result.dart';
+import '../../../domain/hydration/entities/hydration_status.dart';
 import '../../../domain/medication/entities/medication_dose.dart';
 import '../../../domain/medication/entities/medication_doses_result.dart';
 import '../../appointment/appointment_detail_sheet.dart';
 import '../../appointment/providers/appointment_providers.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
+import '../../hydration/providers/hydration_providers.dart';
 import '../../medication/providers/medication_providers.dart';
 import '../../shared/app_snackbar.dart';
 import '../../shared/widgets/app_card.dart';
@@ -24,6 +26,7 @@ class HomePage extends ConsumerWidget {
     final careAsync = ref.watch(careContextProvider);
     final dosesAsync = ref.watch(medicationDosesProvider);
     final appointmentsAsync = ref.watch(patientAppointmentsProvider);
+    final hydrationAsync = ref.watch(hydrationStatusProvider);
     final roleAsync = ref.watch(currentCareRoleProvider);
     final canToggle = roleAsync.maybeWhen(
       data: (role) => role?.canLogDosesAndVitals ?? false,
@@ -45,7 +48,13 @@ class HomePage extends ConsumerWidget {
               const SizedBox(height: 24),
               _buildCardProximoMedicamento(context, ref, dosesAsync, canToggle),
               const SizedBox(height: 24),
-              _buildHidratacao(context, careAsync),
+              _buildHidratacao(
+                context,
+                ref,
+                careAsync,
+                hydrationAsync,
+                canToggle,
+              ),
               const SizedBox(height: 24),
               _buildProximaConsulta(
                 context,
@@ -239,72 +248,118 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHidratacao(BuildContext context, AsyncValue<CareContext> careAsync) {
+  Widget _buildHidratacao(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<CareContext> careAsync,
+    AsyncValue<HydrationStatus> hydrationAsync,
+    bool canLog,
+  ) {
     final patientName = careAsync.maybeWhen(
       data: (ctx) => ctx.patientName,
       orElse: () => 'paciente',
     );
 
-    return AppCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.water_drop_outlined,
-                    color: Colors.blue, size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Hidratacao',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    Text('Ultimo registro ha 145 min',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Faz 145 minutos desde a ultima agua. Hora de oferecer um copo ao $patientName.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  child: const Text('Registrar agua'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Lembrete'),
-                ),
-              ),
-            ],
-          ),
-        ],
+    return hydrationAsync.when(
+      loading: () => AppCard(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              'Carregando hidratacao...',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
       ),
+      error: (_, _) => AppCard(
+        padding: const EdgeInsets.all(20),
+        child: Text(
+          'Nao foi possivel carregar a hidratacao.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ),
+      data: (status) {
+        final subtitle = status.lastLog == null
+            ? 'Sem registros ainda'
+            : 'Ultimo registro ${status.elapsedLabel.toLowerCase()}';
+        final messageColor = status.needsAttention
+            ? Colors.orange.shade800
+            : Theme.of(context).textTheme.bodyMedium?.color;
+
+        return AppCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      status.needsAttention
+                          ? Icons.water_drop
+                          : Icons.water_drop_outlined,
+                      color: status.needsAttention ? Colors.orange : Colors.blue,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Hidratacao',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        Text(subtitle,
+                            style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                status.messageForPatient(patientName),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: messageColor,
+                    ),
+              ),
+              if (canLog) ...[
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => _registerHydration(context, ref),
+                    child: const Text('Registrar agua'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Future<void> _registerHydration(BuildContext context, WidgetRef ref) async {
+    final error = await recordHydration(ref);
+    if (!context.mounted) return;
+    if (error != null) {
+      showAppSnack(context, error, variant: AppSnackVariant.error);
+      return;
+    }
+    showAppSuccessSnack(context, 'Hidratacao registrada.');
   }
 
   Widget _buildProximaConsulta(
