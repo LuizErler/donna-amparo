@@ -15,6 +15,8 @@ import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/empty_state_view.dart';
 import '../../shared/widgets/error_state_view.dart';
 import '../../shared/widgets/loading_state_view.dart';
+import '../../shared/refresh_providers.dart';
+import '../../shared/widgets/pull_to_refresh_scroll_view.dart';
 import '../../shell/shell_page_header.dart';
 import 'medicamentos_gerenciar_page.dart';
 
@@ -129,7 +131,8 @@ class MedicamentosPage extends ConsumerWidget {
         .where((d) => d.period == MedicationDayPeriod.evening)
         .toList();
 
-    return SingleChildScrollView(
+    return PullToRefreshScrollView(
+      onRefresh: (ref) => refreshFutureProvider(ref, medicationDosesProvider),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
