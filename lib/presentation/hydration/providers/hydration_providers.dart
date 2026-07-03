@@ -29,7 +29,7 @@ final hydrationStatusProvider = FutureProvider<HydrationStatus>((ref) async {
 
 Future<String?> recordHydration(WidgetRef ref) async {
   final patient = await ref.read(activePatientProvider.future);
-  if (patient == null) return 'Paciente nao encontrado.';
+  if (patient == null) return 'Paciente não encontrado.';
 
   return runGuarded(
     () async {
@@ -38,6 +38,6 @@ Future<String?> recordHydration(WidgetRef ref) async {
           );
       ref.invalidate(hydrationStatusProvider);
     },
-    fallback: 'Erro ao registrar hidratacao.',
+    fallback: 'Erro ao registrar hidratação.',
   );
 }

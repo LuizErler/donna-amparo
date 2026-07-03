@@ -46,12 +46,12 @@ class MedicationSummary {
     if (count == 1) return '1x ao dia';
     if (count == 2) return '2x ao dia';
     if (count == 3) return '3x ao dia';
-    return '$count horarios';
+    return '$count horários';
   }
 
   String get periodLabel {
     if (!isActive) return 'Encerrado';
-    if (isContinuous) return 'Uso continuo';
+    if (isContinuous) return 'Uso contínuo';
     if (startDate != null && endDate != null) {
       return 'ate ${_fmt(endDate!)}';
     }

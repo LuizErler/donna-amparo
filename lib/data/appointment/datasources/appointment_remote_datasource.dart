@@ -72,7 +72,7 @@ class AppointmentRemoteDataSource {
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      throw const AppException('Usuario nao autenticado.');
+      throw const AppException('Usuário não autenticado.');
     }
 
     await _client.from('appointments').insert({

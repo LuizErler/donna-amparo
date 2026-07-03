@@ -13,7 +13,7 @@ class AsyncStateView<T> extends StatelessWidget {
     required this.data,
     this.loading,
     this.errorBuilder,
-    this.errorFallback = 'Nao foi possivel carregar os dados.',
+    this.errorFallback = 'Não foi possível carregar os dados.',
   });
 
   final AsyncValue<T> value;

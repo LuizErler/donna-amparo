@@ -61,7 +61,7 @@ class CareTeamRemoteDataSource {
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      throw const AppException('Usuario nao autenticado.');
+      throw const AppException('Usuário não autenticado.');
     }
 
     final row = await _client
@@ -125,20 +125,20 @@ class CareTeamRemoteDataSource {
     if (error is PostgrestException) {
       final message = error.message;
       if (message.contains('Convite invalido')) {
-        return const AppException('Convite invalido ou nao encontrado.');
+        return const AppException('Convite inválido ou não encontrado.');
       }
       if (message.contains('Convite ja utilizado')) {
-        return const AppException('Este convite ja foi utilizado.');
+        return const AppException('Este convite já foi utilizado.');
       }
       if (message.contains('Convite expirado')) {
-        return const AppException('Este convite expirou. Peca um novo convite.');
+        return const AppException('Este convite expirou. Peça um novo convite.');
       }
       if (message.contains('Usuario nao autenticado')) {
-        return const AppException('Faca login para aceitar o convite.');
+        return const AppException('Faça login para aceitar o convite.');
       }
       if (message.contains('Voce ja e Cuidador Admin deste paciente')) {
         return const AppException(
-          'Voce ja e Cuidador Admin deste paciente. Convites nao alteram seu papel.',
+          'Você já é Cuidador Admin deste paciente. Convites não alteram seu papel.',
         );
       }
       return AppException(message);

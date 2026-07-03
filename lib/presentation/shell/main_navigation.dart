@@ -25,7 +25,7 @@ class _MainNavigationState extends State<MainNavigation> {
   ];
 
   static const List<_NavItem> _navItems = [
-    _NavItem(label: 'Inicio', icon: Icons.home_outlined, activeIcon: Icons.home),
+    _NavItem(label: 'Início', icon: Icons.home_outlined, activeIcon: Icons.home),
     _NavItem(
         label: 'Medicamentos',
         icon: Icons.medication_outlined,
@@ -35,7 +35,7 @@ class _MainNavigationState extends State<MainNavigation> {
         icon: Icons.medical_services_outlined,
         activeIcon: Icons.medical_services),
     _NavItem(
-        label: 'Calendario',
+        label: 'Calendário',
         icon: Icons.calendar_month_outlined,
         activeIcon: Icons.calendar_month),
     _NavItem(

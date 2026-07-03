@@ -67,7 +67,7 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
       builder: (ctx) => AlertDialog(
         title: const Text('Cancelar consulta?'),
         content: const Text(
-          'A consulta sera removida da agenda. Esta acao nao pode ser desfeita.',
+          'A consulta será removida da agenda. Esta ação não pode ser desfeita.',
         ),
         actions: [
           TextButton(
@@ -140,7 +140,7 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'PROXIMA',
+                    'PRÓXIMA',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: AppTheme.primary,
                           fontWeight: FontWeight.bold,
@@ -161,18 +161,18 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
           _detailRow(
             context,
             icon: Icons.person_outline,
-            label: 'Medico(a)',
+            label: 'Médico(a)',
             value: _appointment.displayDoctor.isEmpty
-                ? 'Nao informado'
+                ? 'Não informado'
                 : _appointment.displayDoctor,
           ),
           const SizedBox(height: 12),
           _detailRow(
             context,
             icon: Icons.access_time,
-            label: 'Data e horario',
+            label: 'Data e horário',
             value: _appointment.scheduleLabel.isEmpty
-                ? 'Nao informado'
+                ? 'Não informado'
                 : _appointment.scheduleLabel,
           ),
           const SizedBox(height: 12),
@@ -181,13 +181,13 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
             icon: Icons.location_on_outlined,
             label: 'Local',
             value: _appointment.displayLocation.isEmpty
-                ? 'Nao informado'
+                ? 'Não informado'
                 : _appointment.displayLocation,
           ),
           if (_appointment.notes?.trim().isNotEmpty == true) ...[
             const SizedBox(height: 16),
             Text(
-              'Anotacoes',
+              'Anotações',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -211,8 +211,8 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
             icon: Icons.group_outlined,
             label: 'Avisar familia',
             value: _appointment.notifyTeam
-                ? 'Sim, nos mesmos horarios'
-                : 'Nao',
+                ? 'Sim, nos mesmos horários'
+                : 'Não',
           ),
           if (widget.canManage) ...[
             const SizedBox(height: 24),

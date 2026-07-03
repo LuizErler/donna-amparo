@@ -28,24 +28,24 @@ class HydrationStatus {
   String messageForPatient(String patientName) {
     final elapsed = timeSinceLast;
     if (elapsed == null) {
-      return 'Ainda nao ha registros de agua para $patientName.';
+      return 'Ainda não há registros de água para $patientName.';
     }
     if (needsAttention) {
-      return 'Faz ${elapsedLabel.toLowerCase()} desde a ultima agua. Hora de oferecer um copo ao $patientName.';
+      return 'Faz ${elapsedLabel.toLowerCase()} desde a última água. Hora de oferecer um copo ao $patientName.';
     }
-    return 'Ultima hidratacao registrada ${elapsedLabel.toLowerCase()}.';
+    return 'Última hidratação registrada ${elapsedLabel.toLowerCase()}.';
   }
 
   static String _formatDuration(Duration duration) {
     final totalMinutes = duration.inMinutes;
-    if (totalMinutes < 1) return 'Ha menos de 1 min';
-    if (totalMinutes < 60) return 'Ha $totalMinutes min';
+    if (totalMinutes < 1) return 'Há menos de 1 min';
+    if (totalMinutes < 60) return 'Há $totalMinutes min';
 
     final hours = duration.inHours;
     final minutes = totalMinutes % 60;
     if (minutes == 0) {
-      return hours == 1 ? 'Ha 1 hora' : 'Ha $hours horas';
+      return hours == 1 ? 'Há 1 hora' : 'Há $hours horas';
     }
-    return 'Ha ${hours}h ${minutes}min';
+    return 'Há ${hours}h ${minutes}min';
   }
 }

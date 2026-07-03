@@ -195,9 +195,9 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Descartar alteracoes?'),
+        title: const Text('Descartar alterações?'),
         content: const Text(
-          'As informacoes preenchidas serao perdidas.',
+          'As informações preenchidas serão perdidas.',
         ),
         actions: [
           TextButton(
@@ -271,7 +271,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       locale: const Locale('pt', 'BR'),
-      helpText: 'Inicio do tratamento',
+      helpText: 'Início do tratamento',
     );
     if (picked != null) {
       setState(
@@ -308,7 +308,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
     final picked = await showTimePicker(
       context: context,
       initialTime: _times[index],
-      helpText: 'Horario da dose',
+      helpText: 'Horário da dose',
       cancelText: 'Cancelar',
       confirmText: 'Salvar',
     );
@@ -321,7 +321,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
               e.value.minute == picked.minute,
         );
     if (duplicate) {
-      _showSnack('Este horario ja foi adicionado.', isError: true);
+      _showSnack('Este horário já foi adicionado.', isError: true);
       return;
     }
 
@@ -340,11 +340,11 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
       context: context,
       initialTime:
           _times.isEmpty ? const TimeOfDay(hour: 8, minute: 0) : _times.last,
-      helpText: 'Horario da dose',
+      helpText: 'Horário da dose',
     );
     if (picked == null) return;
     if (_times.any((t) => t.hour == picked.hour && t.minute == picked.minute)) {
-      _showSnack('Este horario ja foi adicionado.', isError: true);
+      _showSnack('Este horário já foi adicionado.', isError: true);
       return;
     }
     setState(() {
@@ -356,7 +356,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
 
   void _removeTime(int index) {
     if (_times.length <= 1) {
-      _showSnack('Informe pelo menos um horario.', isError: true);
+      _showSnack('Informe pelo menos um horário.', isError: true);
       return;
     }
     setState(() => _times.removeAt(index));
@@ -435,13 +435,13 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
         return;
       }
     } else if (_times.isEmpty) {
-      _showSnack('Adicione pelo menos um horario.', isError: true);
+      _showSnack('Adicione pelo menos um horário.', isError: true);
       return;
     }
 
     final endDate = _resolveEndDate();
     if (_treatmentType == MedicationTreatmentType.limited && endDate == null) {
-      _showSnack('Informe a duracao em dias (minimo 1).', isError: true);
+      _showSnack('Informe a duração em dias (mínimo 1).', isError: true);
       return;
     }
 
@@ -602,7 +602,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
               const SizedBox(height: 14),
               _buildField(
                 context,
-                label: 'Instrucoes (opcional)',
+                label: 'Instruções (opcional)',
                 hint: 'Ex.: Tomar apos o cafe',
                 controller: _instructionsController,
                 icon: Icons.notes_outlined,
@@ -627,7 +627,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                 }).toList(),
               ),
               const SizedBox(height: 16),
-              _buildSectionTitle(context, 'Inicio'),
+              _buildSectionTitle(context, 'Início'),
               const SizedBox(height: 8),
               _buildDateTile(
                 context,
@@ -641,7 +641,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                 const SizedBox(height: 14),
                 _buildField(
                   context,
-                  label: 'Duracao (dias corridos)',
+                  label: 'Duração (dias corridos)',
                   hint: 'Ex.: 7',
                   controller: _durationController,
                   icon: Icons.event_outlined,
@@ -775,7 +775,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSectionTitle(context, 'Horario da dose'),
+                          _buildSectionTitle(context, 'Horário da dose'),
                           const SizedBox(height: 6),
                           _buildDateTile(
                             context,
@@ -792,7 +792,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                 ),
               ] else ...[
                 const SizedBox(height: 16),
-                _buildSectionTitle(context, 'Horarios'),
+                _buildSectionTitle(context, 'Horários'),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -819,19 +819,19 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                   OutlinedButton.icon(
                     onPressed: _loading ? null : _addCustomTime,
                     icon: const Icon(Icons.schedule, size: 18),
-                    label: const Text('Adicionar horario'),
+                    label: const Text('Adicionar horário'),
                   ),
                 ] else ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Toque em um horario para ajustar.',
+                    'Toque em um horário para ajustar.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ],
               if (preview.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                _buildSectionTitle(context, 'Previsao de doses'),
+                _buildSectionTitle(context, 'Previsão de doses'),
                 const SizedBox(height: 8),
                 ...preview.map(
                   (line) => Padding(
@@ -864,7 +864,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                           ),
                         )
                       : Text(widget.isEditing
-                          ? 'Salvar alteracoes'
+                          ? 'Salvar alterações'
                           : 'Salvar medicamento'),
                 ),
               ),
@@ -912,8 +912,8 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                 const SizedBox(height: 4),
                 Text(
                   widget.isEditing
-                      ? 'Alteracoes valem para doses futuras. Confirmacoes anteriores sao mantidas.'
-                      : 'Defina o remedio, a frequencia e o periodo de uso.',
+                      ? 'Alterações valem para doses futuras. Confirmações anteriores são mantidas.'
+                      : 'Defina o remédio, a frequência e o período de uso.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],

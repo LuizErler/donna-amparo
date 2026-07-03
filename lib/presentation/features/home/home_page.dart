@@ -83,7 +83,7 @@ class HomePage extends ConsumerWidget {
       ),
       data: (ctx) => ShellPageHeader(
         title: 'Bom dia, ${ctx.caregiverFirstName}',
-        subtitle: 'Veja como esta o dia de ${ctx.patientName}.',
+        subtitle: 'Veja como está o dia de ${ctx.patientName}.',
       ),
     );
   }
@@ -101,7 +101,7 @@ class HomePage extends ConsumerWidget {
       ),
       error: (_, _) => _buildMedicationCardShell(
         context,
-        subtitle: 'Nao foi possivel carregar as doses.',
+        subtitle: 'Não foi possível carregar as doses.',
       ),
       data: (result) {
         final next = result.nextPendingDose;
@@ -113,7 +113,7 @@ class HomePage extends ConsumerWidget {
         }
         return _buildMedicationCardShell(
           context,
-          title: next.isOverdue ? 'Dose atrasada' : 'Proximo medicamento',
+          title: next.isOverdue ? 'Dose atrasada' : 'Próximo medicamento',
           subtitle: _doseTimeLine(next),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +191,7 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildMedicationCardShell(
     BuildContext context, {
-    String title = 'Proximo medicamento',
+    String title = 'Próximo medicamento',
     String? subtitle,
     Widget? body,
   }) {
@@ -272,7 +272,7 @@ class HomePage extends ConsumerWidget {
             ),
             const SizedBox(width: 14),
             Text(
-              'Carregando hidratacao...',
+              'Carregando hidratação...',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -281,14 +281,14 @@ class HomePage extends ConsumerWidget {
       error: (_, _) => AppCard(
         padding: const EdgeInsets.all(20),
         child: Text(
-          'Nao foi possivel carregar a hidratacao.',
+          'Não foi possível carregar a hidratação.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       ),
       data: (status) {
         final subtitle = status.lastLog == null
             ? 'Sem registros ainda'
-            : 'Ultimo registro ${status.elapsedLabel.toLowerCase()}';
+            : 'Último registro ${status.elapsedLabel.toLowerCase()}';
         final messageColor = status.needsAttention
             ? Colors.orange.shade800
             : Theme.of(context).textTheme.bodyMedium?.color;
@@ -319,7 +319,7 @@ class HomePage extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Hidratacao',
+                        Text('Hidratação',
                             style: Theme.of(context).textTheme.titleMedium),
                         Text(subtitle,
                             style: Theme.of(context).textTheme.bodyMedium),
@@ -341,7 +341,7 @@ class HomePage extends ConsumerWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () => _registerHydration(context, ref),
-                    child: const Text('Registrar agua'),
+                    child: const Text('Registrar água'),
                   ),
                 ),
               ],
@@ -359,7 +359,7 @@ class HomePage extends ConsumerWidget {
       showAppSnack(context, error, variant: AppSnackVariant.error);
       return;
     }
-    showAppSuccessSnack(context, 'Hidratacao registrada.');
+    showAppSuccessSnack(context, 'Hidratação registrada.');
   }
 
   Widget _buildProximaConsulta(
@@ -371,7 +371,7 @@ class HomePage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Proxima consulta',
+        Text('Próxima consulta',
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
         appointmentsAsync.when(
@@ -395,7 +395,7 @@ class HomePage extends ConsumerWidget {
           error: (_, _) => AppCard(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Nao foi possivel carregar a proxima consulta.',
+              'Não foi possível carregar a próxima consulta.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -502,7 +502,7 @@ class HomePage extends ConsumerWidget {
     if (patient == null) {
       showAppSnack(
         context,
-        'Paciente nao encontrado.',
+        'Paciente não encontrado.',
         variant: AppSnackVariant.error,
       );
       return;
@@ -531,15 +531,15 @@ class HomePage extends ConsumerWidget {
           icone: Icons.medication_outlined,
           titulo: 'Medicamento das 20h',
           descricao:
-              'O paciente ainda nao tomou o medicamento das 20h. Alguem pode verificar?',
+              'O paciente ainda não tomou o medicamento das 20h. Alguém pode verificar?',
           cor: Colors.orange,
         ),
         const SizedBox(height: 10),
         _buildPendencia(
           context,
           icone: Icons.water_drop_outlined,
-          titulo: 'Hidratacao',
-          descricao: 'Paciente nao registra agua ha mais de 2 horas.',
+          titulo: 'Hidratação',
+          descricao: 'Paciente não registra água há mais de 2 horas.',
           cor: Colors.blue,
         ),
       ],

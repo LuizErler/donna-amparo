@@ -142,7 +142,7 @@ class MedicationRemoteDataSource {
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      throw const AppException('Usuario nao autenticado.');
+      throw const AppException('Usuário não autenticado.');
     }
 
     final dayStr = _formatDate(day);
@@ -174,7 +174,7 @@ class MedicationRemoteDataSource {
         .eq('scheduled_for', dayStr)
         .eq('scheduled_time', scheduledTime)
         .catchError((Object error) {
-      throw _mapError(error, 'Erro ao desfazer confirmacao da dose.');
+      throw _mapError(error, 'Erro ao desfazer confirmação da dose.');
     });
   }
 
@@ -194,7 +194,7 @@ class MedicationRemoteDataSource {
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      throw const AppException('Usuario nao autenticado.');
+      throw const AppException('Usuário não autenticado.');
     }
 
     final medRow = await _client
@@ -295,7 +295,7 @@ class MedicationRemoteDataSource {
       payload,
       onConflict: 'medication_id,scheduled_for,scheduled_time',
     ).catchError((Object error) {
-      throw _mapError(error, 'Erro ao registrar dose nao tomada.');
+      throw _mapError(error, 'Erro ao registrar dose não tomada.');
     });
   }
 

@@ -48,7 +48,7 @@ class MedicationDose {
     final today = DateTime(now.year, now.month, now.day);
     final diff = today.difference(scheduledFor).inDays;
     if (diff == 1) return 'Ontem';
-    if (diff > 1) return 'Ha $diff dias';
+    if (diff > 1) return 'Há $diff dias';
     return 'Atrasada';
   }
 

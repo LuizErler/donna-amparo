@@ -16,7 +16,7 @@ class HydrationRemoteDataSource {
         .order('recorded_at', ascending: false)
         .limit(1)
         .catchError((Object error) {
-      throw _mapError(error, 'Erro ao carregar hidratacao.');
+      throw _mapError(error, 'Erro ao carregar hidratação.');
     });
 
     final list = rows as List<dynamic>;
@@ -32,14 +32,14 @@ class HydrationRemoteDataSource {
   Future<void> recordHydration({required String patientId}) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      throw const AppException('Usuario nao autenticado.');
+      throw const AppException('Usuário não autenticado.');
     }
 
     await _client.from('hydration_logs').insert({
       'patient_id': patientId,
       'recorded_by': userId,
     }).catchError((Object error) {
-      throw _mapError(error, 'Erro ao registrar hidratacao.');
+      throw _mapError(error, 'Erro ao registrar hidratação.');
     });
   }
 

@@ -63,7 +63,7 @@ Future<String?> toggleMedicationDoseTaken(
   required bool taken,
 }) async {
   final patient = await ref.read(activePatientProvider.future);
-  if (patient == null) return 'Paciente nao encontrado.';
+  if (patient == null) return 'Paciente não encontrado.';
 
   return runGuarded(
     () async {
@@ -137,7 +137,7 @@ Future<String?> markDoseNotTaken(
   required MedicationDose dose,
 }) async {
   final patient = await ref.read(activePatientProvider.future);
-  if (patient == null) return 'Paciente nao encontrado.';
+  if (patient == null) return 'Paciente não encontrado.';
 
   return runGuarded(
     () async {
@@ -150,7 +150,7 @@ Future<String?> markDoseNotTaken(
           );
       _invalidateMedicationViews(ref);
     },
-    fallback: 'Erro ao registrar dose nao tomada.',
+    fallback: 'Erro ao registrar dose não tomada.',
   );
 }
 
