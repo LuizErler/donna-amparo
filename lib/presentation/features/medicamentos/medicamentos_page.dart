@@ -216,9 +216,9 @@ class MedicamentosPage extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: AppTheme.warningSurface(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.shade200),
+        border: Border.all(color: AppTheme.warningBorder(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,13 +226,13 @@ class MedicamentosPage extends ConsumerWidget {
           Row(
             children: [
               Icon(Icons.warning_amber_rounded,
-                  color: Colors.orange.shade800, size: 20),
+                  color: AppTheme.warningForeground(context), size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '${overdue.length} dose${overdue.length > 1 ? 's' : ''} atrasada${overdue.length > 1 ? 's' : ''}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.orange.shade900,
+                        color: AppTheme.warningForegroundStrong(context),
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -241,7 +241,7 @@ class MedicamentosPage extends ConsumerWidget {
                 TextButton(
                   onPressed: () => _resolveOverdue(context, ref, overdue),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.orange.shade900,
+                    foregroundColor: AppTheme.warningForegroundStrong(context),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -375,7 +375,7 @@ class MedicamentosPage extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Icon(icone, size: 18, color: AppTheme.textSecondary),
+            Icon(icone, size: 18, color: AppTheme.onSurfaceSecondary(context)),
             const SizedBox(width: 6),
             Text(period.label, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(width: 8),
@@ -384,12 +384,12 @@ class MedicamentosPage extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade100,
+                  color: AppTheme.successSurface(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text('Completo',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Colors.green.shade700,
+                          color: AppTheme.successForeground(context),
                           fontWeight: FontWeight.w600,
                         )),
               ),
@@ -415,14 +415,14 @@ class MedicamentosPage extends ConsumerWidget {
     final isOverdue = dose.isOverdue;
     return AppCard(
       color: dose.taken
-          ? Colors.green.shade50
+          ? AppTheme.successSurface(context)
           : isOverdue
-              ? Colors.orange.shade50
+              ? AppTheme.warningSurface(context)
               : null,
       borderColor: dose.taken
-          ? Colors.green.shade200
+          ? AppTheme.successBorder(context)
           : isOverdue
-              ? Colors.orange.shade200
+              ? AppTheme.warningBorder(context)
               : null,
       child: Row(
         children: [
@@ -440,7 +440,9 @@ class MedicamentosPage extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: dose.taken ? Colors.green : Colors.transparent,
                 border: Border.all(
-                  color: dose.taken ? Colors.green : AppTheme.cardBorder,
+                  color: dose.taken
+                      ? Colors.green
+                      : AppTheme.cardOutline(context),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(8),
@@ -461,8 +463,8 @@ class MedicamentosPage extends ConsumerWidget {
                         decoration:
                             dose.taken ? TextDecoration.lineThrough : null,
                         color: dose.taken
-                            ? AppTheme.textSecondary
-                            : AppTheme.textPrimary,
+                            ? AppTheme.onSurfaceSecondary(context)
+                            : AppTheme.onSurface(context),
                       ),
                 ),
                 if (isOverdue) ...[
@@ -470,7 +472,7 @@ class MedicamentosPage extends ConsumerWidget {
                   Text(
                     dose.overdueLabel,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Colors.orange.shade800,
+                          color: AppTheme.warningForeground(context),
                           fontWeight: FontWeight.w600,
                         ),
                   ),
@@ -481,8 +483,9 @@ class MedicamentosPage extends ConsumerWidget {
                     dose.instructions,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: dose.taken
-                              ? AppTheme.textSecondary.withValues(alpha: 0.7)
-                              : null,
+                              ? AppTheme.onSurfaceSecondary(context)
+                                  .withValues(alpha: 0.7)
+                              : AppTheme.onSurfaceSecondary(context),
                         ),
                   ),
                 ],
@@ -497,9 +500,9 @@ class MedicamentosPage extends ConsumerWidget {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: dose.taken
-                      ? Colors.green.shade100
+                      ? AppTheme.successSurface(context)
                       : isOverdue
-                          ? Colors.orange.shade100
+                          ? AppTheme.warningSurface(context)
                           : AppTheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -507,9 +510,9 @@ class MedicamentosPage extends ConsumerWidget {
                   dose.timeLabel,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: dose.taken
-                            ? Colors.green.shade700
+                            ? AppTheme.successForeground(context)
                             : isOverdue
-                                ? Colors.orange.shade800
+                                ? AppTheme.warningForeground(context)
                                 : AppTheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -524,8 +527,8 @@ class MedicamentosPage extends ConsumerWidget {
                         : 'Pendente',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: dose.taken
-                          ? Colors.green.shade600
-                          : AppTheme.textSecondary,
+                          ? AppTheme.successForegroundMuted(context)
+                          : AppTheme.onSurfaceSecondary(context),
                     ),
               ),
             ],

@@ -23,11 +23,8 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor =
-        color ?? (isDark ? AppTheme.cardDark : AppTheme.cardNormal);
-    final outlineColor =
-        borderColor ?? (isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder);
+    final surfaceColor = color ?? AppTheme.cardSurface(context);
+    final outlineColor = borderColor ?? AppTheme.cardOutline(context);
 
     return Container(
       width: width ?? double.infinity,

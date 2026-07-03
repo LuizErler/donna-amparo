@@ -18,6 +18,51 @@ class AppTheme {
   static const Color textPrimaryDark   = Color(0xFFF0E0D0);
   static const Color textSecondaryDark = Color(0xFFB08878);
 
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  /// Texto principal legivel sobre [cardSurface] / scaffold.
+  static Color onSurface(BuildContext context) =>
+      isDark(context) ? textPrimaryDark : textPrimary;
+
+  /// Texto secundario / desabilitado.
+  static Color onSurfaceSecondary(BuildContext context) =>
+      isDark(context) ? textSecondaryDark : textSecondary;
+
+  static Color scaffoldBackground(BuildContext context) =>
+      isDark(context) ? backgroundDark : background;
+
+  static Color cardSurface(BuildContext context) =>
+      isDark(context) ? cardDark : cardNormal;
+
+  static Color cardOutline(BuildContext context) =>
+      isDark(context) ? cardBorderDark : cardBorder;
+
+  /// Estados semanticos (ex.: dose tomada / atrasada).
+  static Color successSurface(BuildContext context) =>
+      isDark(context) ? const Color(0xFF1E3A28) : Colors.green.shade50;
+
+  static Color successBorder(BuildContext context) =>
+      isDark(context) ? const Color(0xFF3D6B4F) : Colors.green.shade200;
+
+  static Color successForeground(BuildContext context) =>
+      isDark(context) ? const Color(0xFF8FD4A8) : Colors.green.shade700;
+
+  static Color successForegroundMuted(BuildContext context) =>
+      isDark(context) ? const Color(0xFF6BB888) : Colors.green.shade600;
+
+  static Color warningSurface(BuildContext context) =>
+      isDark(context) ? const Color(0xFF3D2A14) : Colors.orange.shade50;
+
+  static Color warningBorder(BuildContext context) =>
+      isDark(context) ? const Color(0xFF6B4520) : Colors.orange.shade200;
+
+  static Color warningForeground(BuildContext context) =>
+      isDark(context) ? const Color(0xFFFFB86B) : Colors.orange.shade800;
+
+  static Color warningForegroundStrong(BuildContext context) =>
+      isDark(context) ? const Color(0xFFFFD4A3) : Colors.orange.shade900;
+
   static ThemeData get light {
     final base = GoogleFonts.interTextTheme();
 
