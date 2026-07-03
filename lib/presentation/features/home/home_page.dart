@@ -14,8 +14,10 @@ import '../../care/providers/care_team_providers.dart';
 import '../../hydration/providers/hydration_providers.dart';
 import '../../medication/providers/medication_providers.dart';
 import '../../shared/app_snackbar.dart';
+import '../../shared/refresh_providers.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/loading_state_view.dart';
+import '../../shared/widgets/pull_to_refresh_scroll_view.dart';
 import '../../shell/shell_page_header.dart';
 
 class HomePage extends ConsumerWidget {
@@ -39,7 +41,8 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: PullToRefreshScrollView(
+          onRefresh: _refreshHome,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +66,12 @@ class HomePage extends ConsumerWidget {
                 canManageAppointments,
               ),
               const SizedBox(height: 24),
-              _buildPendenciasFamilia(context),
+              _buildPendenciasFamilia(
+                context,
+                dosesAsync,
+                hydrationAsync,
+                careAsync,
+              ),
             ],
           ),
         ),
@@ -519,31 +527,109 @@ class HomePage extends ConsumerWidget {
     showAppSuccessSnack(context, 'Consulta atualizada.');
   }
 
-  Widget _buildPendenciasFamilia(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Pendencias da familia',
-            style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        _buildPendencia(
-          context,
-          icone: Icons.medication_outlined,
-          titulo: 'Medicamento das 20h',
-          descricao:
-              'O paciente ainda não tomou o medicamento das 20h. Alguém pode verificar?',
-          cor: Colors.orange,
-        ),
-        const SizedBox(height: 10),
+  Widget _buildPendenciasFamilia(
+    BuildContext context,
+    AsyncValue<MedicationDosesResult> dosesAsync,
+    AsyncValue<HydrationStatus> hydrationAsync,
+    AsyncValue<CareContext> careAsync,
+  ) {
+    final patientName = careAsync.maybeWhen(
+      data: (ctx) => ctx.patientName,
+      orElse: () => 'paciente',
+    );
+
+    if (dosesAsync.isLoading || hydrationAsync.isLoading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Pendências da família',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  'Carregando pendências...',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    final pendencias = <Widget>[];
+
+    final doses = dosesAsync.valueOrNull;
+    if (doses != null) {
+      final pending = [
+        ...doses.overdue,
+        ...doses.today.where((d) => !d.taken && !d.isMarkedNotTaken),
+      ];
+      for (final dose in pending) {
+        pendencias.add(
+          _buildPendencia(
+            context,
+            icone: Icons.medication_outlined,
+            titulo: dose.isOverdue
+                ? 'Dose atrasada'
+                : 'Medicamento das ${dose.timeLabel}',
+            descricao: _pendenciaMedicamentoDescricao(dose),
+            cor: Colors.orange,
+          ),
+        );
+      }
+    }
+
+    final hydration = hydrationAsync.valueOrNull;
+    if (hydration?.needsAttention == true) {
+      pendencias.add(
         _buildPendencia(
           context,
           icone: Icons.water_drop_outlined,
           titulo: 'Hidratação',
-          descricao: 'Paciente não registra água há mais de 2 horas.',
+          descricao: hydration!.messageForPatient(patientName),
           cor: Colors.blue,
         ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Pendências da família',
+            style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        if (pendencias.isEmpty)
+          AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Nenhuma pendência no momento.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          )
+        else
+          for (var i = 0; i < pendencias.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            pendencias[i],
+          ],
       ],
     );
+  }
+
+  String _pendenciaMedicamentoDescricao(MedicationDose dose) {
+    if (dose.isOverdue && dose.overdueLabel.isNotEmpty) {
+      return '${dose.displayName} · ${dose.overdueLabel}. Alguém pode verificar?';
+    }
+    return 'O paciente ainda não tomou ${dose.displayName} (${dose.timeLabel}). Alguém pode verificar?';
   }
 
   Widget _buildPendencia(
@@ -581,4 +667,15 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _refreshHome(WidgetRef ref) async {
+  ref.invalidate(currentProfileProvider);
+  ref.invalidate(activePatientProvider);
+  ref.invalidate(hasActivePatientProvider);
+  await refreshFutureProviders(ref, [
+    medicationDosesProvider,
+    patientAppointmentsProvider,
+    hydrationStatusProvider,
+  ]);
 }

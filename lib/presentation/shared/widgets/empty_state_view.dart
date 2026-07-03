@@ -28,7 +28,7 @@ class EmptyStateView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 40, color: AppTheme.textSecondary),
+        Icon(icon, size: 40, color: AppTheme.onSurfaceSecondary(context)),
         if (title != null) ...[
           const SizedBox(height: 12),
           Text(

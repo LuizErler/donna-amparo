@@ -91,10 +91,8 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
       orElse: () => false,
     );
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final borderColor =
-        isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
 
     return Scaffold(
       body: SafeArea(
@@ -134,34 +132,53 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : eventsForSelectedDay.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Nenhum evento neste dia.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                          itemCount: eventsForSelectedDay.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final event = eventsForSelectedDay[index];
-                            return _EventTile(
-                              event: event,
-                              cardColor: cardColor,
-                              borderColor: borderColor,
-                              onTap: () => _onEventTap(
-                                context,
-                                event,
-                                appointments,
+              child: RefreshIndicator(
+                onRefresh: () => _refreshCalendar(ref),
+                child: isLoading
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        children: const [
+                          SizedBox(height: 120),
+                          Center(child: CircularProgressIndicator()),
+                        ],
+                      )
+                    : eventsForSelectedDay.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                            children: [
+                              const SizedBox(height: 120),
+                              Center(
+                                child: Text(
+                                  'Nenhum evento neste dia.',
+                                  style:
+                                      Theme.of(context).textTheme.bodyMedium,
+                                ),
                               ),
-                            );
-                          },
-                        ),
+                            ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                            itemCount: eventsForSelectedDay.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final event = eventsForSelectedDay[index];
+                              return _EventTile(
+                                event: event,
+                                cardColor: cardColor,
+                                borderColor: borderColor,
+                                onTap: () => _onEventTap(
+                                  context,
+                                  event,
+                                  appointments,
+                                ),
+                              );
+                            },
+                          ),
+              ),
             ),
           ],
         ),
@@ -367,6 +384,14 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
     ref.invalidate(appointmentCalendarAppointmentsProvider);
     ref.invalidate(patientAppointmentsProvider);
     showAppSuccessSnack(context, 'Consulta agendada com sucesso.');
+  }
+
+  Future<void> _refreshCalendar(WidgetRef ref) async {
+    final monthKey = calendarMonthKey(_focusedDay);
+    ref.invalidate(medicationCalendarDosesProvider(monthKey));
+    ref.invalidate(appointmentCalendarAppointmentsProvider(monthKey));
+    await ref.read(medicationCalendarDosesProvider(monthKey).future);
+    await ref.read(appointmentCalendarAppointmentsProvider(monthKey).future);
   }
 
   static Color _colorForType(CalendarEventType type) {
