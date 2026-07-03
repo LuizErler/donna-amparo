@@ -6,14 +6,15 @@ import '../../../core/theme/app_theme.dart';
 import '../../../domain/appointment/entities/appointment.dart';
 import '../../../domain/calendar/entities/calendar_event.dart';
 import '../../../domain/medication/entities/medication_dose.dart';
+import '../../appointment/add_appointment_sheet.dart';
 import '../../appointment/appointment_detail_sheet.dart';
+import '../../appointment/providers/appointment_providers.dart';
 import '../../calendar/calendar_event_mapper.dart';
 import '../../calendar/providers/calendar_providers.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../shared/app_snackbar.dart';
 import '../../shell/shell_page_header.dart';
-import '../consultas/consultas_page.dart';
 import 'mock_calendar_events.dart';
 
 class CalendarioPage extends ConsumerStatefulWidget {
@@ -84,6 +85,11 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
     final isLoading =
         (dosesAsync.isLoading && medicationDoses.isEmpty) ||
         (appointmentsAsync.isLoading && appointments.isEmpty);
+    final roleAsync = ref.watch(currentCareRoleProvider);
+    final canManage = roleAsync.maybeWhen(
+      data: (role) => role?.canCreateMedsAndAppointments ?? false,
+      orElse: () => false,
+    );
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
@@ -160,11 +166,13 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _onAddPressed(context),
-        tooltip: 'Novo compromisso',
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canManage
+          ? FloatingActionButton(
+              onPressed: () => _onScheduleAppointment(context),
+              tooltip: 'Agendar consulta',
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -289,9 +297,10 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
         }
       }
       if (appointment == null) {
-        Navigator.push(
+        showAppSnack(
           context,
-          MaterialPageRoute(builder: (_) => const ConsultasPage()),
+          'Consulta nao encontrada.',
+          variant: AppSnackVariant.error,
         );
         return;
       }
@@ -318,12 +327,15 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
       );
       if (!context.mounted || changed != true) return;
       showAppSuccessSnack(context, 'Consulta atualizada.');
+      ref.invalidate(appointmentCalendarAppointmentsProvider);
+      ref.invalidate(patientAppointmentsProvider);
       return;
     }
 
     final label = switch (event.type) {
       CalendarEventType.medicationDose => 'Gerencie doses na aba Medicamentos.',
-      CalendarEventType.manual => 'Detalhes de compromissos em breve.',
+      CalendarEventType.manual =>
+        'Compromissos manuais estarao disponiveis em versao futura.',
       CalendarEventType.appointment => '',
     };
 
@@ -332,50 +344,29 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
     );
   }
 
-  void _onAddPressed(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Novo compromisso',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.calendar_today_outlined),
-                title: const Text('Agendar consulta'),
-                subtitle: const Text('Use a aba Consultas (em breve: fluxo dedicado)'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ConsultasPage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.event_outlined),
-                title: const Text('Outro compromisso'),
-                subtitle: const Text('Disponivel na integracao com Supabase'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Compromissos manuais — em breve.'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+  Future<void> _onScheduleAppointment(BuildContext context) async {
+    final patient = await ref.read(activePatientProvider.future);
+    if (!context.mounted) return;
+    if (patient == null) {
+      showAppSnack(
+        context,
+        'Paciente nao encontrado.',
+        variant: AppSnackVariant.error,
+      );
+      return;
+    }
+
+    final saved = await showAddAppointmentSheet(
+      context,
+      ref,
+      patientId: patient.id,
+      initialSchedule: _selectedDay,
     );
+    if (!context.mounted || saved != true) return;
+
+    ref.invalidate(appointmentCalendarAppointmentsProvider);
+    ref.invalidate(patientAppointmentsProvider);
+    showAppSuccessSnack(context, 'Consulta agendada com sucesso.');
   }
 
   static Color _colorForType(CalendarEventType type) {

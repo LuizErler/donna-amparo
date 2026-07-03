@@ -14,6 +14,7 @@ Future<bool?> showAppointmentFormSheet(
   WidgetRef ref, {
   required String patientId,
   Appointment? existing,
+  DateTime? initialSchedule,
 }) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -24,6 +25,7 @@ Future<bool?> showAppointmentFormSheet(
     builder: (context) => _AddAppointmentSheet(
       patientId: patientId,
       existing: existing,
+      initialSchedule: initialSchedule,
     ),
   );
 }
@@ -32,17 +34,25 @@ Future<bool?> showAddAppointmentSheet(
   BuildContext context,
   WidgetRef ref, {
   required String patientId,
+  DateTime? initialSchedule,
 }) =>
-    showAppointmentFormSheet(context, ref, patientId: patientId);
+    showAppointmentFormSheet(
+      context,
+      ref,
+      patientId: patientId,
+      initialSchedule: initialSchedule,
+    );
 
 class _AddAppointmentSheet extends ConsumerStatefulWidget {
   const _AddAppointmentSheet({
     required this.patientId,
     this.existing,
+    this.initialSchedule,
   });
 
   final String patientId;
   final Appointment? existing;
+  final DateTime? initialSchedule;
 
   bool get isEditing => existing != null;
 
@@ -90,7 +100,8 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
       return;
     }
 
-    final defaultSchedule = _defaultSchedule();
+    final defaultSchedule =
+        _scheduleForNew(widget.initialSchedule) ?? _defaultSchedule();
     _scheduledDate = DateTime(
       defaultSchedule.year,
       defaultSchedule.month,
@@ -109,6 +120,15 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
       candidate = candidate.add(const Duration(days: 1));
     }
     return candidate;
+  }
+
+  static DateTime? _scheduleForNew(DateTime? initial) {
+    if (initial == null) return null;
+    final local = initial.toLocal();
+    var candidate =
+        DateTime(local.year, local.month, local.day, 10, 0);
+    if (candidate.isAfter(DateTime.now())) return candidate;
+    return null;
   }
 
   @override
