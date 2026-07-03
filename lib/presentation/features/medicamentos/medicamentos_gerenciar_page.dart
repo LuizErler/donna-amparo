@@ -129,10 +129,10 @@ class _MedTile extends ConsumerWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: med.isActive
-            ? AppTheme.cardNormal
-            : AppTheme.cardNormal.withValues(alpha: 0.6),
+            ? AppTheme.cardSurface(context)
+            : AppTheme.cardSurface(context).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.cardBorder),
+        border: Border.all(color: AppTheme.cardOutline(context)),
       ),
       child: Row(
         children: [
@@ -144,8 +144,8 @@ class _MedTile extends ConsumerWidget {
                   med.name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: med.isActive
-                            ? AppTheme.textPrimary
-                            : AppTheme.textSecondary,
+                            ? AppTheme.onSurface(context)
+                            : AppTheme.onSurfaceSecondary(context),
                       ),
                 ),
                 const SizedBox(height: 2),
