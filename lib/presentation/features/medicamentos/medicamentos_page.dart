@@ -412,25 +412,25 @@ class MedicamentosPage extends ConsumerWidget {
     MedicationDose dose,
     bool canToggle,
   ) {
-    final isOverdue = dose.isOverdue;
+    final isDueNow = dose.isDueNow;
     return AppCard(
       color: dose.taken
           ? AppTheme.successSurface(context)
-          : isOverdue
+          : isDueNow
               ? AppTheme.warningSurface(context)
               : null,
       borderColor: dose.taken
           ? AppTheme.successBorder(context)
-          : isOverdue
+          : isDueNow
               ? AppTheme.warningBorder(context)
               : null,
       child: Row(
         children: [
           GestureDetector(
-            onTap: canToggle && !isOverdue
+            onTap: canToggle && !dose.isPastDayOverdue
                 ? () => _onToggleDose(context, ref, dose)
                 : null,
-            onLongPress: canToggle && isOverdue
+            onLongPress: canToggle && dose.isPastDayOverdue
                 ? () => _onMarkNotTaken(context, ref, dose)
                 : null,
             child: AnimatedContainer(
@@ -467,10 +467,12 @@ class MedicamentosPage extends ConsumerWidget {
                             : AppTheme.onSurface(context),
                       ),
                 ),
-                if (isOverdue) ...[
+                if (isDueNow) ...[
                   const SizedBox(height: 2),
                   Text(
-                    dose.overdueLabel,
+                    dose.isPastDayOverdue && dose.overdueLabel.isNotEmpty
+                        ? dose.overdueLabel
+                        : 'Atrasada',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: AppTheme.warningForeground(context),
                           fontWeight: FontWeight.w600,
@@ -501,7 +503,7 @@ class MedicamentosPage extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: dose.taken
                       ? AppTheme.successSurface(context)
-                      : isOverdue
+                      : isDueNow
                           ? AppTheme.warningSurface(context)
                           : AppTheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -511,7 +513,7 @@ class MedicamentosPage extends ConsumerWidget {
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: dose.taken
                             ? AppTheme.successForeground(context)
-                            : isOverdue
+                            : isDueNow
                                 ? AppTheme.warningForeground(context)
                                 : AppTheme.primary,
                         fontWeight: FontWeight.bold,
@@ -522,7 +524,7 @@ class MedicamentosPage extends ConsumerWidget {
               Text(
                 dose.taken
                     ? 'Confirmado'
-                    : isOverdue
+                    : isDueNow
                         ? 'Atrasada'
                         : 'Pendente',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(

@@ -13,6 +13,12 @@ class Patient {
   final String? allergies;
   final String? emergencyContact;
 
+  String get firstName {
+    final trimmed = fullName.trim();
+    if (trimmed.isEmpty) return 'quem você cuida';
+    return trimmed.split(RegExp(r'\s+')).first;
+  }
+
   factory Patient.fromJson(Map<String, dynamic> json) {
     final dob = json['date_of_birth'] as String?;
     return Patient(

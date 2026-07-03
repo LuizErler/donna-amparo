@@ -121,7 +121,9 @@ class HomePage extends ConsumerWidget {
         }
         return _buildMedicationCardShell(
           context,
-          title: next.isOverdue ? 'Dose atrasada' : 'Próximo medicamento',
+          title: next.isPastDayOverdue || next.isLateToday
+              ? 'Dose atrasada'
+              : 'Próximo medicamento',
           subtitle: _doseTimeLine(next),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,8 +172,11 @@ class HomePage extends ConsumerWidget {
   }
 
   String _doseTimeLine(MedicationDose dose) {
-    if (dose.isOverdue && dose.overdueLabel.isNotEmpty) {
+    if (dose.isPastDayOverdue && dose.overdueLabel.isNotEmpty) {
       return '${dose.overdueLabel} · ${dose.timeLabel}';
+    }
+    if (dose.isLateToday) {
+      return 'Atrasada · ${dose.timeLabel}';
     }
     return 'as ${dose.timeLabel}';
   }
@@ -533,9 +538,9 @@ class HomePage extends ConsumerWidget {
     AsyncValue<HydrationStatus> hydrationAsync,
     AsyncValue<CareContext> careAsync,
   ) {
-    final patientName = careAsync.maybeWhen(
-      data: (ctx) => ctx.patientName,
-      orElse: () => 'paciente',
+    final patientFirstName = careAsync.maybeWhen(
+      data: (ctx) => ctx.patientFirstName,
+      orElse: () => 'quem você cuida',
     );
 
     if (dosesAsync.isLoading || hydrationAsync.isLoading) {
@@ -570,19 +575,15 @@ class HomePage extends ConsumerWidget {
 
     final doses = dosesAsync.valueOrNull;
     if (doses != null) {
-      final pending = [
-        ...doses.overdue,
-        ...doses.today.where((d) => !d.taken && !d.isMarkedNotTaken),
-      ];
-      for (final dose in pending) {
+      for (final dose in doses.attentionPendingDoses) {
         pendencias.add(
           _buildPendencia(
             context,
             icone: Icons.medication_outlined,
-            titulo: dose.isOverdue
+            titulo: dose.isPastDayOverdue || dose.isLateToday
                 ? 'Dose atrasada'
                 : 'Medicamento das ${dose.timeLabel}',
-            descricao: _pendenciaMedicamentoDescricao(dose),
+            descricao: _pendenciaMedicamentoDescricao(dose, patientFirstName),
             cor: Colors.orange,
           ),
         );
@@ -596,7 +597,7 @@ class HomePage extends ConsumerWidget {
           context,
           icone: Icons.water_drop_outlined,
           titulo: 'Hidratação',
-          descricao: hydration!.messageForPatient(patientName),
+          descricao: hydration!.messageForPatient(patientFirstName),
           cor: Colors.blue,
         ),
       );
@@ -625,11 +626,14 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  String _pendenciaMedicamentoDescricao(MedicationDose dose) {
-    if (dose.isOverdue && dose.overdueLabel.isNotEmpty) {
-      return '${dose.displayName} · ${dose.overdueLabel}. Alguém pode verificar?';
+  String _pendenciaMedicamentoDescricao(
+    MedicationDose dose,
+    String patientFirstName,
+  ) {
+    if (dose.isPastDayOverdue && dose.overdueLabel.isNotEmpty) {
+      return '$patientFirstName ainda não tomou ${dose.displayName} · ${dose.overdueLabel}. Alguém pode verificar?';
     }
-    return 'O paciente ainda não tomou ${dose.displayName} (${dose.timeLabel}). Alguém pode verificar?';
+    return '$patientFirstName ainda não tomou ${dose.displayName} (${dose.timeLabel}). Alguém pode verificar?';
   }
 
   Widget _buildPendencia(

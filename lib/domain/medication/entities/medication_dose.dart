@@ -36,6 +36,39 @@ class MedicationDose {
   bool get isMarkedNotTaken =>
       skippedReason == MedicationSkippedReason.notTaken;
 
+  /// Horario local combinando [scheduledFor] + [scheduledTime].
+  DateTime get scheduledAt {
+    final parts = scheduledTime.split(':');
+    final hour = int.tryParse(parts.first) ?? 0;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    return DateTime(
+      scheduledFor.year,
+      scheduledFor.month,
+      scheduledFor.day,
+      hour,
+      minute,
+    );
+  }
+
+  /// Dose de dia anterior nao confirmada.
+  bool get isPastDayOverdue => isOverdue;
+
+  /// Dose de hoje cujo horario ja passou e ainda nao foi confirmada.
+  bool get isLateToday {
+    if (taken || isMarkedNotTaken || isOverdue) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (scheduledFor != today) return false;
+    return !scheduledAt.isAfter(now);
+  }
+
+  /// Deve aparecer como pendencia/alerta (nao inclui horarios futuros de hoje).
+  bool get isDueNow {
+    if (taken || isMarkedNotTaken) return false;
+    if (isOverdue) return true;
+    return isLateToday;
+  }
+
   String get displayName {
     final dose = dosage?.trim();
     if (dose == null || dose.isEmpty) return name;
