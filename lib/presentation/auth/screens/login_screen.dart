@@ -62,10 +62,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final isLoading = authState.isLoading;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
-
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -78,9 +74,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 20),
                 _buildLogo(context),
                 const SizedBox(height: 48),
-                _buildCampoEmail(context, cardColor, borderColor),
+                _buildCampoEmail(context),
                 const SizedBox(height: 14),
-                _buildCampoSenha(context, cardColor, borderColor),
+                _buildCampoSenha(context),
                 const SizedBox(height: 12),
                 _buildEsqueciSenha(context),
                 const SizedBox(height: 28),
@@ -88,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 24),
                 _buildDivisor(context),
                 const SizedBox(height: 24),
-                _buildBotaoGoogle(context, cardColor, borderColor),
+                _buildBotaoGoogle(context),
                 const SizedBox(height: 40),
                 _buildRodape(context),
               ],
@@ -137,8 +133,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildCampoEmail(
-      BuildContext context, Color cardColor, Color borderColor) {
+  Widget _buildCampoEmail(BuildContext context) {
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
+    final iconColor = AppTheme.onSurfaceSecondary(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -158,8 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             hintStyle: Theme.of(context).textTheme.bodyMedium,
             filled: true,
             fillColor: cardColor,
-            prefixIcon: Icon(Icons.email_outlined,
-                color: AppTheme.textSecondary, size: 20),
+            prefixIcon: Icon(Icons.email_outlined, color: iconColor, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: borderColor),
@@ -186,7 +183,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Informe o e-mail';
-            if (!v.contains('@')) return 'E-mail invalido';
+            if (!v.contains('@')) return 'E-mail inválido';
             return null;
           },
         ),
@@ -194,8 +191,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildCampoSenha(
-      BuildContext context, Color cardColor, Color borderColor) {
+  Widget _buildCampoSenha(BuildContext context) {
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
+    final iconColor = AppTheme.onSurfaceSecondary(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -218,14 +217,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             hintStyle: Theme.of(context).textTheme.bodyMedium,
             filled: true,
             fillColor: cardColor,
-            prefixIcon: Icon(Icons.lock_outline,
-                color: AppTheme.textSecondary, size: 20),
+            prefixIcon: Icon(Icons.lock_outline, color: iconColor, size: 20),
             suffixIcon: IconButton(
               icon: Icon(
                 _senhaVisivel
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
-                color: AppTheme.textSecondary,
+                color: iconColor,
                 size: 20,
               ),
               tooltip: _senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',
@@ -258,7 +256,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Informe a senha';
-            if (v.length < 6) return 'Minimo 6 caracteres';
+            if (v.length < 6) return 'Mínimo 6 caracteres';
             return null;
           },
         ),
@@ -321,18 +319,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildDivisor(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Divider(color: AppTheme.cardBorder)),
+        Expanded(child: Divider(color: AppTheme.cardOutline(context))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text('ou', style: Theme.of(context).textTheme.bodyMedium),
         ),
-        Expanded(child: Divider(color: AppTheme.cardBorder)),
+        Expanded(child: Divider(color: AppTheme.cardOutline(context))),
       ],
     );
   }
 
-  Widget _buildBotaoGoogle(
-      BuildContext context, Color cardColor, Color borderColor) {
+  Widget _buildBotaoGoogle(BuildContext context) {
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
     return SizedBox(
       width: double.infinity,
       height: 52,
@@ -366,7 +365,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildRodape(BuildContext context) {
     return Center(
       child: MinTapTarget(
-        semanticsLabel: 'Nao tem conta? Cadastre-se',
+        semanticsLabel: 'Não tem conta? Cadastre-se',
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const SignupScreen()),
@@ -375,7 +374,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           text: TextSpan(
             children: [
               TextSpan(
-                text: 'Nao tem conta? ',
+                text: 'Não tem conta? ',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               TextSpan(

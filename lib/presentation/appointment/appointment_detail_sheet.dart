@@ -154,7 +154,7 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
           Text(
             _appointment.visitTypeLabel,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.onSurfaceSecondary(context),
                 ),
           ),
           const SizedBox(height: 20),
@@ -275,7 +275,7 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: AppTheme.textSecondary),
+        Icon(icon, size: 20, color: AppTheme.onSurfaceSecondary(context)),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -283,7 +283,7 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
             children: [
               Text(label,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.onSurfaceSecondary(context),
                       )),
               const SizedBox(height: 2),
               Text(value, style: Theme.of(context).textTheme.bodyMedium),

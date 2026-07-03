@@ -54,9 +54,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authControllerProvider).isLoading;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -97,8 +96,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                             hintText: 'seu@email.com',
                             filled: true,
                             fillColor: cardColor,
-                            prefixIcon: const Icon(Icons.email_outlined,
-                                color: AppTheme.textSecondary, size: 20),
+                            prefixIcon: Icon(Icons.email_outlined,
+                                color: AppTheme.onSurfaceSecondary(context),
+                                size: 20),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: BorderSide(color: borderColor),
@@ -117,7 +117,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                             if (v == null || v.isEmpty) {
                               return 'Informe o e-mail';
                             }
-                            if (!v.contains('@')) return 'E-mail invalido';
+                            if (!v.contains('@')) return 'E-mail inválido';
                             return null;
                           },
                         ),
@@ -125,7 +125,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       const SizedBox(height: 32),
                       Semantics(
                         button: true,
-                        label: 'Enviar link de recuperacao',
+                        label: 'Enviar link de recuperação',
                         child: SizedBox(
                           width: double.infinity,
                           height: 52,
@@ -176,7 +176,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Se existir uma conta com ${_emailController.text.trim()}, voce recebera um link para criar uma nova senha.',
+          'Se existir uma conta com ${_emailController.text.trim()}, você receberá um link para criar uma nova senha.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 32),

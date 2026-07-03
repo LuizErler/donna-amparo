@@ -72,9 +72,8 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authControllerProvider).isLoading;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -111,7 +110,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                   semanticsLabel: 'Nova senha',
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Informe a senha';
-                    if (v.length < 6) return 'Minimo 6 caracteres';
+                    if (v.length < 6) return 'Mínimo 6 caracteres';
                     return null;
                   },
                 ),
@@ -125,7 +124,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                   semanticsLabel: 'Confirmar nova senha',
                   validator: (v) {
                     if (v != _senhaController.text) {
-                      return 'As senhas nao conferem';
+                      return 'As senhas não conferem';
                     }
                     return null;
                   },
@@ -198,14 +197,14 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
               hintText: '••••••••',
               filled: true,
               fillColor: cardColor,
-              prefixIcon: const Icon(Icons.lock_outline,
-                  color: AppTheme.textSecondary, size: 20),
+              prefixIcon: Icon(Icons.lock_outline,
+                  color: AppTheme.onSurfaceSecondary(context), size: 20),
               suffixIcon: IconButton(
                 icon: Icon(
                   _senhaVisivel
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.onSurfaceSecondary(context),
                   size: 20,
                 ),
                 tooltip: _senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',

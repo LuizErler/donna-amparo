@@ -68,9 +68,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final isLoading = authState.isLoading;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -116,7 +115,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   tipoTeclado: TextInputType.emailAddress,
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Informe o e-mail';
-                    if (!v.contains('@')) return 'E-mail invalido';
+                    if (!v.contains('@')) return 'E-mail inválido';
                     return null;
                   },
                 ),
@@ -130,7 +129,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   borderColor: borderColor,
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Informe a senha';
-                    if (v.length < 6) return 'Minimo 6 caracteres';
+                    if (v.length < 6) return 'Mínimo 6 caracteres';
                     return null;
                   },
                 ),
@@ -144,7 +143,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   borderColor: borderColor,
                   validator: (v) {
                     if (v != _senhaController.text) {
-                      return 'As senhas nao conferem';
+                      return 'As senhas não conferem';
                     }
                     return null;
                   },
@@ -185,13 +184,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 const SizedBox(height: 24),
                 Center(
                   child: MinTapTarget(
-                    semanticsLabel: 'Ja tem conta? Entrar',
+                    semanticsLabel: 'Já tem conta? Entrar',
                     onTap: () => Navigator.pop(context),
                     child: RichText(
                       text: TextSpan(
                         children: [
                           TextSpan(
-                            text: 'Ja tem conta? ',
+                            text: 'Já tem conta? ',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           TextSpan(
@@ -278,7 +277,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 _senhaVisivel
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
-                color: AppTheme.textSecondary,
+                color: AppTheme.onSurfaceSecondary(context),
                 size: 20,
               ),
               tooltip: _senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',
@@ -309,7 +308,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       hintStyle: Theme.of(context).textTheme.bodyMedium,
       filled: true,
       fillColor: cardColor,
-      prefixIcon: Icon(icone, color: AppTheme.textSecondary, size: 20),
+      prefixIcon: Icon(icone, color: AppTheme.onSurfaceSecondary(context), size: 20),
       suffixIcon: sufixo,
       border: border,
       enabledBorder: border,

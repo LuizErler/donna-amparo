@@ -89,9 +89,8 @@ class _PatientOnboardingScreenState
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(onboardingControllerProvider).isLoading;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
     final dateLabel = _dataNascimento == null
         ? 'Selecionar data'
         : _formatDate(_dataNascimento!);
@@ -109,7 +108,7 @@ class _PatientOnboardingScreenState
                     style: Theme.of(context).textTheme.headlineLarge),
                 const SizedBox(height: 6),
                 Text(
-                  'Quem voce vai acompanhar no Donna Amparo?',
+                  'Quem você vai acompanhar no Donna Amparo?',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 32),
@@ -217,7 +216,7 @@ class _PatientOnboardingScreenState
               filled: true,
               fillColor: cardColor,
               prefixIcon: Icon(Icons.calendar_today_outlined,
-                  color: AppTheme.textSecondary, size: 20),
+                  color: AppTheme.onSurfaceSecondary(context), size: 20),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: borderColor),
@@ -287,7 +286,7 @@ class _PatientOnboardingScreenState
       hintStyle: Theme.of(context).textTheme.bodyMedium,
       filled: true,
       fillColor: cardColor,
-      prefixIcon: Icon(icone, color: AppTheme.textSecondary, size: 20),
+      prefixIcon: Icon(icone, color: AppTheme.onSurfaceSecondary(context), size: 20),
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(

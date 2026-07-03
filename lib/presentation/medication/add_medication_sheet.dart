@@ -540,9 +540,8 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
     final summary = _treatmentSummary();
     final preview = _previewLabels();
 
@@ -666,7 +665,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                 const SizedBox(height: 8),
                 Text(summary,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.onSurfaceSecondary(context),
                         )),
               ],
               const SizedBox(height: 20),
@@ -981,7 +980,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
         decoration: InputDecoration(
           filled: true,
           fillColor: cardColor,
-          prefixIcon: Icon(icon, color: AppTheme.textSecondary, size: 20),
+          prefixIcon: Icon(icon, color: AppTheme.onSurfaceSecondary(context), size: 20),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(color: borderColor),
@@ -1037,7 +1036,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
             hintText: hint,
             filled: true,
             fillColor: cardColor,
-            prefixIcon: Icon(icon, color: AppTheme.textSecondary, size: 20),
+            prefixIcon: Icon(icon, color: AppTheme.onSurfaceSecondary(context), size: 20),
             border: border,
             enabledBorder: border,
             focusedBorder: OutlineInputBorder(

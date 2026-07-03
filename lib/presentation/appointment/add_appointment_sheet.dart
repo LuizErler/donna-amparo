@@ -273,9 +273,8 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
-    final borderColor = isDark ? AppTheme.cardBorderDark : AppTheme.cardBorder;
+    final cardColor = AppTheme.cardSurface(context);
+    final borderColor = AppTheme.cardOutline(context);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottomInset),
@@ -473,7 +472,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
         decoration: InputDecoration(
           filled: true,
           fillColor: cardColor,
-          prefixIcon: Icon(icon, color: AppTheme.textSecondary, size: 20),
+          prefixIcon: Icon(icon, color: AppTheme.onSurfaceSecondary(context), size: 20),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(color: borderColor),
@@ -525,7 +524,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
             hintText: hint,
             filled: true,
             fillColor: cardColor,
-            prefixIcon: Icon(icon, color: AppTheme.textSecondary, size: 20),
+            prefixIcon: Icon(icon, color: AppTheme.onSurfaceSecondary(context), size: 20),
             border: border,
             enabledBorder: border,
             focusedBorder: OutlineInputBorder(
