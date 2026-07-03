@@ -99,9 +99,9 @@ class FamiliaPage extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardNormal,
+        color: AppTheme.cardSurface(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
+        border: Border.all(color: AppTheme.cardOutline(context)),
       ),
       child: Text(
         'Somente o Cuidador Admin pode convidar novos membros.',
@@ -230,9 +230,9 @@ class FamiliaPage extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.cardNormal,
+        color: AppTheme.cardSurface(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
+        border: Border.all(color: AppTheme.cardOutline(context)),
       ),
       child: Row(
         children: [
@@ -342,9 +342,9 @@ class FamiliaPage extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardNormal,
+                  color: AppTheme.cardSurface(context),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.cardBorder),
+                  border: Border.all(color: AppTheme.cardOutline(context)),
                 ),
                 child: Row(
                   children: [

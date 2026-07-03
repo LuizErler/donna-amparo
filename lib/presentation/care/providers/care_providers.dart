@@ -90,6 +90,8 @@ class CareContext {
 
   String get patientName => patient?.fullName ?? 'paciente';
 
+  String get patientFirstName => patient?.firstName ?? 'quem você cuida';
+
   String get contextLabel => 'Cuidando de $patientName';
 
   String get profileInitials => profile?.initials ?? '?';

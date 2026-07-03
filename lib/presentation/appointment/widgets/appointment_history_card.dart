@@ -27,9 +27,9 @@ class AppointmentHistoryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
-            color: AppTheme.cardNormal,
+            color: AppTheme.cardSurface(context),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.cardBorder),
+            border: Border.all(color: AppTheme.cardOutline(context)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +63,7 @@ class AppointmentHistoryCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.background,
+                    color: AppTheme.scaffoldBackground(context),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(16),
                       bottomRight: Radius.circular(16),
@@ -75,10 +75,11 @@ class AppointmentHistoryCard extends StatelessWidget {
                       Row(
                         children: [
                           Icon(Icons.edit_note,
-                              size: 14, color: AppTheme.textSecondary),
+                              size: 14,
+                              color: AppTheme.onSurfaceSecondary(context)),
                           const SizedBox(width: 4),
                           Text(
-                            'ANOTACOES',
+                            'ANOTAÇÕES',
                             style: Theme.of(context)
                                 .textTheme
                                 .labelMedium

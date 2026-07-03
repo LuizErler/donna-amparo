@@ -118,7 +118,7 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: AppTheme.cardBorder,
+                color: AppTheme.cardOutline(context),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

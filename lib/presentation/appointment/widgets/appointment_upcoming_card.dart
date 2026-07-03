@@ -22,9 +22,9 @@ class AppointmentUpcomingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
-            color: AppTheme.cardNormal,
+            color: AppTheme.cardSurface(context),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.cardBorder),
+            border: Border.all(color: AppTheme.cardOutline(context)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -61,7 +61,7 @@ class AppointmentUpcomingCard extends StatelessWidget {
                         appointment.scheduleLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary,
+                              color: AppTheme.onSurface(context),
                             ),
                       ),
                       if (appointment.displayLocation.isNotEmpty) ...[
