@@ -91,6 +91,52 @@ class AppointmentRemoteDataSource {
     });
   }
 
+  Future<void> updateAppointment({
+    required String patientId,
+    required int appointmentId,
+    required String specialty,
+    required DateTime appointmentDate,
+    String? doctor,
+    String? location,
+    required String visitType,
+    String? notes,
+    required bool reminder24h,
+    required bool notifyTeam,
+  }) async {
+    await _client
+        .from('appointments')
+        .update({
+          'title': specialty,
+          'specialty': specialty,
+          'doctor': doctor,
+          'location': location,
+          'appointment_date': appointmentDate.toUtc().toIso8601String(),
+          'visit_type': visitType,
+          'notes': notes,
+          'reminder_24h': reminder24h,
+          'notify_team': notifyTeam,
+        })
+        .eq('id', appointmentId)
+        .eq('patient_id', patientId)
+        .catchError((Object error) {
+      throw _mapError(error, 'Erro ao atualizar consulta.');
+    });
+  }
+
+  Future<void> deleteAppointment({
+    required String patientId,
+    required int appointmentId,
+  }) async {
+    await _client
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentId)
+        .eq('patient_id', patientId)
+        .catchError((Object error) {
+      throw _mapError(error, 'Erro ao cancelar consulta.');
+    });
+  }
+
   AppException _mapError(Object error, String fallback) {
     if (error is PostgrestException) {
       return AppException(error.message);

@@ -67,3 +67,37 @@ Future<String?> createAppointment(
     fallback: 'Erro ao agendar consulta.',
   );
 }
+
+Future<String?> updateAppointment(
+  WidgetRef ref, {
+  required String patientId,
+  required UpdateAppointmentInput input,
+}) async {
+  return runGuarded(
+    () async {
+      await ref.read(appointmentRepositoryProvider).updateAppointment(
+            patientId: patientId,
+            input: input,
+          );
+      _invalidateAppointmentViews(ref);
+    },
+    fallback: 'Erro ao atualizar consulta.',
+  );
+}
+
+Future<String?> deleteAppointment(
+  WidgetRef ref, {
+  required String patientId,
+  required int appointmentId,
+}) async {
+  return runGuarded(
+    () async {
+      await ref.read(appointmentRepositoryProvider).deleteAppointment(
+            patientId: patientId,
+            appointmentId: appointmentId,
+          );
+      _invalidateAppointmentViews(ref);
+    },
+    fallback: 'Erro ao cancelar consulta.',
+  );
+}

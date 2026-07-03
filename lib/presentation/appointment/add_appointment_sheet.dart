@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../domain/appointment/entities/appointment.dart';
 import '../../../domain/appointment/entities/appointment_visit_type.dart';
 import '../../../domain/appointment/repositories/appointment_repository.dart';
 import 'providers/appointment_providers.dart';
 
-Future<bool?> showAddAppointmentSheet(
+Future<bool?> showAppointmentFormSheet(
   BuildContext context,
   WidgetRef ref, {
   required String patientId,
+  Appointment? existing,
 }) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -17,14 +19,30 @@ Future<bool?> showAddAppointmentSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (context) => _AddAppointmentSheet(patientId: patientId),
+    builder: (context) => _AddAppointmentSheet(
+      patientId: patientId,
+      existing: existing,
+    ),
   );
 }
 
+Future<bool?> showAddAppointmentSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  required String patientId,
+}) =>
+    showAppointmentFormSheet(context, ref, patientId: patientId);
+
 class _AddAppointmentSheet extends ConsumerStatefulWidget {
-  const _AddAppointmentSheet({required this.patientId});
+  const _AddAppointmentSheet({
+    required this.patientId,
+    this.existing,
+  });
 
   final String patientId;
+  final Appointment? existing;
+
+  bool get isEditing => existing != null;
 
   @override
   ConsumerState<_AddAppointmentSheet> createState() =>
@@ -48,6 +66,21 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
   @override
   void initState() {
     super.initState();
+    final existing = widget.existing;
+    if (existing != null) {
+      _specialtyController.text = existing.displaySpecialty;
+      _doctorController.text = existing.doctor ?? '';
+      _locationController.text = existing.location ?? '';
+      _notesController.text = existing.notes ?? '';
+      _visitType = AppointmentVisitType.fromCode(existing.visitType);
+      _reminder24h = existing.reminder24h;
+      _notifyTeam = existing.notifyTeam;
+      final date = existing.appointmentDate?.toLocal() ?? _defaultSchedule();
+      _scheduledDate = DateTime(date.year, date.month, date.day);
+      _scheduledTime = TimeOfDay(hour: date.hour, minute: date.minute);
+      return;
+    }
+
     final defaultSchedule = _defaultSchedule();
     _scheduledDate = DateTime(
       defaultSchedule.year,
@@ -86,11 +119,21 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
         _scheduledTime.minute,
       );
 
+  bool get _requiresFutureDate =>
+      !widget.isEditing || (widget.existing?.isUpcoming() ?? false);
+
+  DateTime get _firstPickableDate {
+    if (widget.isEditing && !(widget.existing?.isUpcoming() ?? true)) {
+      return DateTime(2020);
+    }
+    return DateTime.now();
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _scheduledDate,
-      firstDate: DateTime.now(),
+      firstDate: _firstPickableDate,
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       locale: const Locale('pt', 'BR'),
       helpText: 'Data da consulta',
@@ -115,7 +158,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (!_appointmentDateTime.isAfter(DateTime.now())) {
+    if (_requiresFutureDate && !_appointmentDateTime.isAfter(DateTime.now())) {
       _showSnack('Escolha uma data e horario no futuro.', isError: true);
       return;
     }
@@ -127,20 +170,39 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
     final location = _locationController.text.trim();
     final notes = _notesController.text.trim();
 
-    final error = await createAppointment(
-      ref,
-      patientId: widget.patientId,
-      input: CreateAppointmentInput(
-        specialty: specialty,
-        appointmentDate: _appointmentDateTime,
-        doctor: doctor.isEmpty ? null : doctor,
-        location: location.isEmpty ? null : location,
-        visitType: _visitType,
-        notes: notes.isEmpty ? null : notes,
-        reminder24h: _reminder24h,
-        notifyTeam: _notifyTeam,
-      ),
-    );
+    String? error;
+    if (widget.isEditing) {
+      error = await updateAppointment(
+        ref,
+        patientId: widget.patientId,
+        input: UpdateAppointmentInput(
+          appointmentId: widget.existing!.id,
+          specialty: specialty,
+          appointmentDate: _appointmentDateTime,
+          doctor: doctor.isEmpty ? null : doctor,
+          location: location.isEmpty ? null : location,
+          visitType: _visitType,
+          notes: notes.isEmpty ? null : notes,
+          reminder24h: _reminder24h,
+          notifyTeam: _notifyTeam,
+        ),
+      );
+    } else {
+      error = await createAppointment(
+        ref,
+        patientId: widget.patientId,
+        input: CreateAppointmentInput(
+          specialty: specialty,
+          appointmentDate: _appointmentDateTime,
+          doctor: doctor.isEmpty ? null : doctor,
+          location: location.isEmpty ? null : location,
+          visitType: _visitType,
+          notes: notes.isEmpty ? null : notes,
+          reminder24h: _reminder24h,
+          notifyTeam: _notifyTeam,
+        ),
+      );
+    }
 
     if (!mounted) return;
     setState(() => _loading = false);
@@ -203,12 +265,14 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
                 ),
               ),
               Text(
-                'Agendar consulta',
+                widget.isEditing ? 'Editar consulta' : 'Agendar consulta',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 4),
               Text(
-                'Registre consultas e exames do paciente.',
+                widget.isEditing
+                    ? 'Alteracoes valem para esta consulta.'
+                    : 'Registre consultas e exames do paciente.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
@@ -335,7 +399,9 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Salvar consulta'),
+                      : Text(widget.isEditing
+                          ? 'Salvar alteracoes'
+                          : 'Salvar consulta'),
                 ),
               ),
               const SizedBox(height: 8),

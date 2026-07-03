@@ -1,3 +1,5 @@
+import 'appointment_visit_type.dart';
+
 /// Consulta ou exame agendado (`appointments`).
 class Appointment {
   const Appointment({
@@ -31,6 +33,9 @@ class Appointment {
   String get displayDoctor => doctor?.trim() ?? '';
 
   String get displayLocation => location?.trim() ?? '';
+
+  String get visitTypeLabel =>
+      AppointmentVisitType.fromCode(visitType).label;
 
   bool isUpcoming({DateTime? reference}) {
     final date = appointmentDate;
