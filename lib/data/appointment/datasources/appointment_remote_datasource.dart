@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../domain/appointment/entities/appointment.dart';
+import '../../../domain/appointment/entities/appointment_reminder_offset.dart';
 
 class AppointmentRemoteDataSource {
   SupabaseClient get _client => supabase;
@@ -16,8 +17,8 @@ class AppointmentRemoteDataSource {
     appointment_date,
     visit_type,
     notes,
-    reminder_24h,
-    notify_team
+    reminder_offsets_minutes,
+    team_notify_offsets_minutes
   ''';
 
   Future<List<Appointment>> listAppointments({
@@ -66,8 +67,8 @@ class AppointmentRemoteDataSource {
     String? location,
     required String visitType,
     String? notes,
-    required bool reminder24h,
-    required bool notifyTeam,
+    required List<AppointmentReminderOffset> personalReminders,
+    required List<AppointmentReminderOffset> teamNotifyReminders,
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
@@ -83,8 +84,10 @@ class AppointmentRemoteDataSource {
       'appointment_date': appointmentDate.toUtc().toIso8601String(),
       'visit_type': visitType,
       'notes': notes,
-      'reminder_24h': reminder24h,
-      'notify_team': notifyTeam,
+      'reminder_offsets_minutes':
+          AppointmentReminderOffset.toMinutesList(personalReminders),
+      'team_notify_offsets_minutes':
+          AppointmentReminderOffset.toMinutesList(teamNotifyReminders),
       'created_by': userId,
     }).catchError((Object error) {
       throw _mapError(error, 'Erro ao agendar consulta.');
@@ -100,8 +103,8 @@ class AppointmentRemoteDataSource {
     String? location,
     required String visitType,
     String? notes,
-    required bool reminder24h,
-    required bool notifyTeam,
+    required List<AppointmentReminderOffset> personalReminders,
+    required List<AppointmentReminderOffset> teamNotifyReminders,
   }) async {
     await _client
         .from('appointments')
@@ -113,8 +116,10 @@ class AppointmentRemoteDataSource {
           'appointment_date': appointmentDate.toUtc().toIso8601String(),
           'visit_type': visitType,
           'notes': notes,
-          'reminder_24h': reminder24h,
-          'notify_team': notifyTeam,
+          'reminder_offsets_minutes':
+              AppointmentReminderOffset.toMinutesList(personalReminders),
+          'team_notify_offsets_minutes':
+              AppointmentReminderOffset.toMinutesList(teamNotifyReminders),
         })
         .eq('id', appointmentId)
         .eq('patient_id', patientId)

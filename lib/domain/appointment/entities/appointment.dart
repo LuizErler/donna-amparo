@@ -1,3 +1,4 @@
+import 'appointment_reminder_offset.dart';
 import 'appointment_visit_type.dart';
 
 /// Consulta ou exame agendado (`appointments`).
@@ -11,8 +12,8 @@ class Appointment {
     this.appointmentDate,
     this.visitType,
     this.notes,
-    this.reminder24h = false,
-    this.notifyTeam = false,
+    this.personalReminders = const [],
+    this.teamNotifyReminders = const [],
   });
 
   final int id;
@@ -23,8 +24,10 @@ class Appointment {
   final DateTime? appointmentDate;
   final String? visitType;
   final String? notes;
-  final bool reminder24h;
-  final bool notifyTeam;
+  final List<AppointmentReminderOffset> personalReminders;
+  final List<AppointmentReminderOffset> teamNotifyReminders;
+
+  bool get notifyTeam => teamNotifyReminders.isNotEmpty;
 
   String get displaySpecialty => specialty?.trim().isNotEmpty == true
       ? specialty!.trim()
@@ -36,6 +39,12 @@ class Appointment {
 
   String get visitTypeLabel =>
       AppointmentVisitType.fromCode(visitType).label;
+
+  String get personalRemindersLabel =>
+      AppointmentReminderOffset.formatList(personalReminders);
+
+  String get teamNotifyRemindersLabel =>
+      AppointmentReminderOffset.formatList(teamNotifyReminders);
 
   bool isUpcoming({DateTime? reference}) {
     final date = appointmentDate;
@@ -74,8 +83,12 @@ class Appointment {
       appointmentDate: _parseDateTime(json['appointment_date'] as String?),
       visitType: json['visit_type'] as String?,
       notes: json['notes'] as String?,
-      reminder24h: json['reminder_24h'] as bool? ?? false,
-      notifyTeam: json['notify_team'] as bool? ?? false,
+      personalReminders: AppointmentReminderOffset.fromMinutesList(
+        json['reminder_offsets_minutes'] as List<dynamic>?,
+      ),
+      teamNotifyReminders: AppointmentReminderOffset.fromMinutesList(
+        json['team_notify_offsets_minutes'] as List<dynamic>?,
+      ),
     );
   }
 

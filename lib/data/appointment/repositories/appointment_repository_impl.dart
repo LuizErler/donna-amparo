@@ -65,8 +65,8 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       location: _trimOrNull(input.location),
       visitType: input.visitType.code,
       notes: _trimOrNull(input.notes),
-      reminder24h: input.reminder24h,
-      notifyTeam: input.notifyTeam,
+      personalReminders: input.personalReminders,
+      teamNotifyReminders: input.teamNotifyReminders,
     );
   }
 
@@ -84,8 +84,8 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       location: _trimOrNull(input.location),
       visitType: input.visitType.code,
       notes: _trimOrNull(input.notes),
-      reminder24h: input.reminder24h,
-      notifyTeam: input.notifyTeam,
+      personalReminders: input.personalReminders,
+      teamNotifyReminders: input.teamNotifyReminders,
     );
   }
 

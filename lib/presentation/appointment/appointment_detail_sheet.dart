@@ -202,15 +202,17 @@ class _AppointmentDetailSheetState extends ConsumerState<_AppointmentDetailSheet
           _detailRow(
             context,
             icon: Icons.notifications_outlined,
-            label: 'Lembrete 24h',
-            value: _appointment.reminder24h ? 'Ativado' : 'Desativado',
+            label: 'Alertas',
+            value: _appointment.personalRemindersLabel,
           ),
           const SizedBox(height: 8),
           _detailRow(
             context,
             icon: Icons.group_outlined,
             label: 'Avisar familia',
-            value: _appointment.notifyTeam ? 'Sim' : 'Nao',
+            value: _appointment.notifyTeam
+                ? 'Sim, nos mesmos horarios'
+                : 'Nao',
           ),
           if (widget.canManage) ...[
             const SizedBox(height: 24),

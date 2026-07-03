@@ -1,5 +1,6 @@
 import '../entities/appointment.dart';
 import '../entities/appointments_list_result.dart';
+import '../entities/appointment_reminder_offset.dart';
 import '../entities/appointment_visit_type.dart';
 
 class CreateAppointmentInput {
@@ -10,8 +11,8 @@ class CreateAppointmentInput {
     this.location,
     this.visitType = AppointmentVisitType.consulta,
     this.notes,
-    this.reminder24h = true,
-    this.notifyTeam = false,
+    this.personalReminders = AppointmentReminderOffset.defaultPersonal,
+    this.teamNotifyReminders = const [],
   });
 
   final String specialty;
@@ -20,8 +21,8 @@ class CreateAppointmentInput {
   final String? location;
   final AppointmentVisitType visitType;
   final String? notes;
-  final bool reminder24h;
-  final bool notifyTeam;
+  final List<AppointmentReminderOffset> personalReminders;
+  final List<AppointmentReminderOffset> teamNotifyReminders;
 }
 
 class UpdateAppointmentInput {
@@ -33,8 +34,8 @@ class UpdateAppointmentInput {
     this.location,
     this.visitType = AppointmentVisitType.consulta,
     this.notes,
-    this.reminder24h = true,
-    this.notifyTeam = false,
+    this.personalReminders = AppointmentReminderOffset.defaultPersonal,
+    this.teamNotifyReminders = const [],
   });
 
   final int appointmentId;
@@ -44,8 +45,8 @@ class UpdateAppointmentInput {
   final String? location;
   final AppointmentVisitType visitType;
   final String? notes;
-  final bool reminder24h;
-  final bool notifyTeam;
+  final List<AppointmentReminderOffset> personalReminders;
+  final List<AppointmentReminderOffset> teamNotifyReminders;
 }
 
 abstract class AppointmentRepository {
