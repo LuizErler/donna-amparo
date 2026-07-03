@@ -1,8 +1,28 @@
+import '../../domain/appointment/entities/appointment.dart';
 import '../../domain/calendar/entities/calendar_event.dart';
 import '../../domain/medication/entities/medication_dose.dart';
 
 class CalendarEventMapper {
   CalendarEventMapper._();
+
+  static CalendarEvent fromAppointment(Appointment appointment) {
+    final start = appointment.appointmentDate?.toLocal() ?? DateTime.now();
+    final doctor = appointment.displayDoctor;
+    final location = appointment.displayLocation;
+    final subtitleParts = [
+      if (doctor.isNotEmpty) doctor,
+      if (location.isNotEmpty) location,
+    ];
+
+    return CalendarEvent(
+      id: 'appt-${appointment.id}',
+      start: start,
+      title: appointment.displaySpecialty,
+      subtitle: subtitleParts.isEmpty ? appointment.visitTypeLabel : subtitleParts.join(' · '),
+      type: CalendarEventType.appointment,
+      sourceId: appointment.id.toString(),
+    );
+  }
 
   static CalendarEvent fromMedicationDose(MedicationDose dose) {
     final parts = dose.scheduledTime.split(':');
@@ -40,5 +60,17 @@ class CalendarEventMapper {
     DateTime day,
   ) {
     return doses.where((d) => isSameDay(d.scheduledFor, day)).toList();
+  }
+
+  static List<Appointment> appointmentsOnDay(
+    List<Appointment> appointments,
+    DateTime day,
+  ) {
+    return appointments
+        .where((a) {
+          final date = a.appointmentDate?.toLocal();
+          return date != null && isSameDay(date, day);
+        })
+        .toList();
   }
 }

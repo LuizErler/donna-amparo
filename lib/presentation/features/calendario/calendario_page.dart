@@ -3,10 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../domain/appointment/entities/appointment.dart';
 import '../../../domain/calendar/entities/calendar_event.dart';
 import '../../../domain/medication/entities/medication_dose.dart';
+import '../../appointment/appointment_detail_sheet.dart';
 import '../../calendar/calendar_event_mapper.dart';
 import '../../calendar/providers/calendar_providers.dart';
+import '../../care/providers/care_providers.dart';
+import '../../care/providers/care_team_providers.dart';
+import '../../shared/app_snackbar.dart';
 import '../../shell/shell_page_header.dart';
 import '../consultas/consultas_page.dart';
 import 'mock_calendar_events.dart';
@@ -34,19 +39,32 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
   List<CalendarEvent> _eventsForDay(
     DateTime day,
     List<MedicationDose> medicationDoses,
+    List<Appointment> appointments,
   ) {
-    final staticEvents = MockCalendarEvents.forDay(day);
+    final manualEvents = MockCalendarEvents.forDay(day)
+        .where((e) => e.type == CalendarEventType.manual)
+        .toList();
+    final appointmentEvents = CalendarEventMapper.appointmentsOnDay(
+      appointments,
+      day,
+    ).map(CalendarEventMapper.fromAppointment);
     final medEvents = CalendarEventMapper.dosesOnDay(medicationDoses, day)
         .map(CalendarEventMapper.fromMedicationDose);
-    return [...staticEvents, ...medEvents]
+    return [...manualEvents, ...appointmentEvents, ...medEvents]
       ..sort((a, b) => a.start.compareTo(b.start));
   }
 
   List<CalendarEventType> _typesOnDay(
     DateTime day,
     List<MedicationDose> medicationDoses,
+    List<Appointment> appointments,
   ) {
-    final types = MockCalendarEvents.typesOnDay(day);
+    final types = MockCalendarEvents.typesOnDay(day)
+        .where((t) => t == CalendarEventType.manual)
+        .toSet();
+    if (CalendarEventMapper.appointmentsOnDay(appointments, day).isNotEmpty) {
+      types.add(CalendarEventType.appointment);
+    }
     if (CalendarEventMapper.dosesOnDay(medicationDoses, day).isNotEmpty) {
       types.add(CalendarEventType.medicationDose);
     }
@@ -57,9 +75,15 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
   Widget build(BuildContext context) {
     final monthKey = calendarMonthKey(_focusedDay);
     final dosesAsync = ref.watch(medicationCalendarDosesProvider(monthKey));
+    final appointmentsAsync =
+        ref.watch(appointmentCalendarAppointmentsProvider(monthKey));
     final medicationDoses = dosesAsync.valueOrNull ?? const <MedicationDose>[];
+    final appointments = appointmentsAsync.valueOrNull ?? const <Appointment>[];
     final eventsForSelectedDay =
-        _eventsForDay(_selectedDay, medicationDoses);
+        _eventsForDay(_selectedDay, medicationDoses, appointments);
+    final isLoading =
+        (dosesAsync.isLoading && medicationDoses.isEmpty) ||
+        (appointmentsAsync.isLoading && appointments.isEmpty);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardNormal;
@@ -86,6 +110,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
                 cardColor,
                 borderColor,
                 medicationDoses,
+                appointments,
               ),
             ),
             const SizedBox(height: 12),
@@ -103,7 +128,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: dosesAsync.isLoading && medicationDoses.isEmpty
+              child: isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : eventsForSelectedDay.isEmpty
                       ? Center(
@@ -123,7 +148,11 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
                               event: event,
                               cardColor: cardColor,
                               borderColor: borderColor,
-                              onTap: () => _onEventTap(context, event),
+                              onTap: () => _onEventTap(
+                                context,
+                                event,
+                                appointments,
+                              ),
                             );
                           },
                         ),
@@ -144,6 +173,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
     Color cardColor,
     Color borderColor,
     List<MedicationDose> medicationDoses,
+    List<Appointment> appointments,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -159,7 +189,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
         calendarFormat: _calendarFormat,
         startingDayOfWeek: StartingDayOfWeek.monday,
         locale: 'pt_BR',
-        eventLoader: (day) => _typesOnDay(day, medicationDoses),
+        eventLoader: (day) => _typesOnDay(day, medicationDoses, appointments),
         calendarStyle: CalendarStyle(
           todayDecoration: BoxDecoration(
             color: AppTheme.primary.withValues(alpha: 0.25),
@@ -242,12 +272,52 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
     );
   }
 
-  void _onEventTap(BuildContext context, CalendarEvent event) {
+  Future<void> _onEventTap(
+    BuildContext context,
+    CalendarEvent event,
+    List<Appointment> appointments,
+  ) async {
     if (event.type == CalendarEventType.appointment) {
-      Navigator.push(
+      final id = int.tryParse(event.sourceId ?? '');
+      Appointment? appointment;
+      if (id != null) {
+        for (final a in appointments) {
+          if (a.id == id) {
+            appointment = a;
+            break;
+          }
+        }
+      }
+      if (appointment == null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ConsultasPage()),
+        );
+        return;
+      }
+
+      final role = await ref.read(currentCareRoleProvider.future);
+      final canManage = role?.canCreateMedsAndAppointments ?? false;
+      final patient = await ref.read(activePatientProvider.future);
+      if (!context.mounted) return;
+      if (patient == null) {
+        showAppSnack(
+          context,
+          'Paciente nao encontrado.',
+          variant: AppSnackVariant.error,
+        );
+        return;
+      }
+
+      final changed = await showAppointmentDetailSheet(
         context,
-        MaterialPageRoute(builder: (_) => const ConsultasPage()),
+        ref,
+        patientId: patient.id,
+        appointment: appointment,
+        canManage: canManage,
       );
+      if (!context.mounted || changed != true) return;
+      showAppSuccessSnack(context, 'Consulta atualizada.');
       return;
     }
 

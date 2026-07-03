@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../domain/appointment/entities/appointment.dart';
 import '../../../domain/medication/entities/medication_dose.dart';
+import '../../appointment/providers/appointment_providers.dart';
 import '../../care/providers/care_providers.dart';
 import '../../medication/providers/medication_providers.dart';
 
@@ -34,4 +36,13 @@ final medicationCalendarDosesProvider =
         rangeStart: _monthRangeStart(month),
         rangeEnd: _monthRangeEnd(month),
       );
+});
+
+/// Consultas no intervalo do mes visivel (+ margem para semanas cortadas).
+final appointmentCalendarAppointmentsProvider =
+    FutureProvider.family<List<Appointment>, CalendarMonthKey>((ref, month) async {
+  return ref.watch(appointmentsInRangeProvider((
+    start: _monthRangeStart(month),
+    end: _monthRangeEnd(month),
+  )).future);
 });
