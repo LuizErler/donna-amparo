@@ -34,7 +34,7 @@ class ConsultasPage extends ConsumerWidget {
       body: SafeArea(
         child: AsyncStateView<AppointmentsListResult>(
           value: appointmentsAsync,
-          errorFallback: 'Nao foi possivel carregar as consultas.',
+          errorFallback: 'Não foi possível carregar as consultas.',
           data: (result) => _buildContent(context, ref, result, canManage),
         ),
       ),
@@ -54,7 +54,7 @@ class ConsultasPage extends ConsumerWidget {
     if (patient == null) {
       showAppSnack(
         context,
-        'Paciente nao encontrado.',
+        'Paciente não encontrado.',
         variant: AppSnackVariant.error,
       );
       return;
@@ -80,7 +80,7 @@ class ConsultasPage extends ConsumerWidget {
     if (patient == null) {
       showAppSnack(
         context,
-        'Paciente nao encontrado.',
+        'Paciente não encontrado.',
         variant: AppSnackVariant.error,
       );
       return;
@@ -113,14 +113,14 @@ class ConsultasPage extends ConsumerWidget {
         children: const [
           ShellPageHeader(
             title: 'Consultas',
-            subtitle: 'Agenda medica e historico.',
+            subtitle: 'Agenda médica e histórico.',
           ),
           SizedBox(height: 48),
           EmptyStateView(
             icon: Icons.medical_services_outlined,
             title: 'Nenhuma consulta',
             message:
-                'Agende consultas e exames para acompanhar a agenda medica.',
+                'Agende consultas e exames para acompanhar a agenda médica.',
           ),
         ],
       );
@@ -141,7 +141,7 @@ class ConsultasPage extends ConsumerWidget {
             const SizedBox(height: 28),
             _buildSection(
               context,
-              titulo: 'Proximas',
+              titulo: 'Próximas',
               children: [
                 if (highlight != null) ...[
                   AppointmentHighlightCard(
@@ -170,7 +170,7 @@ class ConsultasPage extends ConsumerWidget {
             const SizedBox(height: 28),
             _buildSection(
               context,
-              titulo: 'Historico',
+              titulo: 'Histórico',
               children: [
                 for (var i = 0; i < result.past.length; i++) ...[
                   if (i > 0) const SizedBox(height: 12),
@@ -195,7 +195,7 @@ class ConsultasPage extends ConsumerWidget {
   Widget _buildHeader(BuildContext context) {
     return const ShellPageHeader(
       title: 'Consultas',
-      subtitle: 'Agenda medica e historico.',
+      subtitle: 'Agenda médica e histórico.',
     );
   }
 

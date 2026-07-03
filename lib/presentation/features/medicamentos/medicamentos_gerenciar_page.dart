@@ -200,7 +200,7 @@ class _MedTile extends ConsumerWidget {
         builder: (ctx) => AlertDialog(
           title: const Text('Encerrar medicamento?'),
           content: Text(
-            'Encerrar ${med.name}? Doses ja confirmadas serao mantidas no historico.',
+            'Encerrar ${med.name}? Doses já confirmadas serão mantidas no histórico.',
           ),
           actions: [
             TextButton(

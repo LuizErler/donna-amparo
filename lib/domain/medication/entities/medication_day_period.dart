@@ -1,6 +1,6 @@
 /// Periodo do dia para agrupamento na UI (Manha/Tarde/Noite).
 enum MedicationDayPeriod {
-  morning('Manha'),
+  morning('Manhã'),
   afternoon('Tarde'),
   evening('Noite');
 

@@ -57,7 +57,7 @@ class AppointmentHighlightCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'PROXIMA',
+                      'PRÓXIMA',
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,

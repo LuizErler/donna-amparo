@@ -179,7 +179,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
     final picked = await showTimePicker(
       context: context,
       initialTime: _scheduledTime,
-      helpText: 'Horario da consulta',
+      helpText: 'Horário da consulta',
     );
     if (picked != null) setState(() => _scheduledTime = picked);
   }
@@ -188,7 +188,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_requiresFutureDate && !_appointmentDateTime.isAfter(DateTime.now())) {
-      _showSnack('Escolha uma data e horario no futuro.', isError: true);
+      _showSnack('Escolha uma data e horário no futuro.', isError: true);
       return;
     }
 
@@ -304,7 +304,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
               const SizedBox(height: 4),
               Text(
                 widget.isEditing
-                    ? 'Alteracoes valem para esta consulta.'
+                    ? 'Alterações valem para esta consulta.'
                     : 'Registre consultas e exames do paciente.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
@@ -325,7 +325,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
               const SizedBox(height: 16),
               _buildField(
                 context,
-                label: 'Especialidade ou titulo',
+                label: 'Especialidade ou título',
                 hint: 'Ex.: Cardiologia',
                 controller: _specialtyController,
                 icon: Icons.medical_services_outlined,
@@ -337,7 +337,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
               const SizedBox(height: 14),
               _buildField(
                 context,
-                label: 'Medico(a) (opcional)',
+                label: 'Médico(a) (opcional)',
                 hint: 'Ex.: Dra. Helena Vasconcelos',
                 controller: _doctorController,
                 icon: Icons.person_outline,
@@ -348,14 +348,14 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
               _buildField(
                 context,
                 label: 'Local (opcional)',
-                hint: 'Ex.: Clinica CorVida — Sala 304',
+                hint: 'Ex.: Clínica CorVida — Sala 304',
                 controller: _locationController,
                 icon: Icons.location_on_outlined,
                 cardColor: cardColor,
                 borderColor: borderColor,
               ),
               const SizedBox(height: 16),
-              _sectionTitle(context, 'Data e horario'),
+              _sectionTitle(context, 'Data e horário'),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -385,7 +385,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
               const SizedBox(height: 16),
               _buildField(
                 context,
-                label: 'Anotacoes (opcional)',
+                label: 'Anotações (opcional)',
                 hint: 'Ex.: Levar exames recentes',
                 controller: _notesController,
                 icon: Icons.notes_outlined,
@@ -428,7 +428,7 @@ class _AddAppointmentSheetState extends ConsumerState<_AddAppointmentSheet> {
                           ),
                         )
                       : Text(widget.isEditing
-                          ? 'Salvar alteracoes'
+                          ? 'Salvar alterações'
                           : 'Salvar consulta'),
                 ),
               ),

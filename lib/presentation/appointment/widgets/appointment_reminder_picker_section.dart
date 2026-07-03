@@ -15,7 +15,7 @@ class AppointmentReminderPickerSection extends StatelessWidget {
     this.notifyFamily = false,
     this.onNotifyFamilyChanged,
     this.familyToggleTitle = 'Avisar a familia',
-    this.familyToggleSubtitle = 'Notificar o circulo de cuidado nos mesmos horarios',
+    this.familyToggleSubtitle = 'Notificar o círculo de cuidado nos mesmos horários',
   });
 
   final String title;

@@ -47,7 +47,7 @@ class CalendarEventMapper {
 
   static String _subtitleForDose(MedicationDose dose) {
     if (dose.taken) return 'Confirmada';
-    if (dose.isMarkedNotTaken) return 'Nao tomada';
+    if (dose.isMarkedNotTaken) return 'Não tomada';
     if (dose.instructions.trim().isNotEmpty) return dose.instructions.trim();
     return 'Dose do dia';
   }

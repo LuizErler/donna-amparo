@@ -7,7 +7,7 @@ enum CareTeamRole {
   caregiver('caregiver', 'Cuidador'),
 
   /// Cuidador Basico — visualiza, marca doses e registra vitais.
-  caregiverBasic('caregiver_basic', 'Cuidador Basico'),
+  caregiverBasic('caregiver_basic', 'Cuidador Básico'),
 
   /// Observador — somente leitura.
   observer('observer', 'Observador');

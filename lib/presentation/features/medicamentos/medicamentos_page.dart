@@ -66,7 +66,7 @@ class MedicamentosPage extends ConsumerWidget {
     if (patient == null) {
       showAppSnack(
         context,
-        'Paciente nao encontrado.',
+        'Paciente não encontrado.',
         variant: AppSnackVariant.error,
       );
       return;
@@ -97,12 +97,12 @@ class MedicamentosPage extends ConsumerWidget {
         children: [
           const ShellPageHeader(
             title: 'Medicamentos',
-            subtitle: 'Doses do dia e confirmacoes.',
+            subtitle: 'Doses do dia e confirmações.',
           ),
           ErrorStateView(
             message: mapErrorMessage(
               error,
-              fallback: 'Nao foi possivel carregar os medicamentos.',
+              fallback: 'Não foi possível carregar os medicamentos.',
             ),
             centered: false,
             alignStart: true,
@@ -139,7 +139,7 @@ class MedicamentosPage extends ConsumerWidget {
         children: [
           const ShellPageHeader(
             title: 'Medicamentos',
-            subtitle: 'Doses do dia e confirmacoes.',
+            subtitle: 'Doses do dia e confirmações.',
           ),
           Align(
             alignment: Alignment.centerRight,
@@ -273,8 +273,8 @@ class MedicamentosPage extends ConsumerWidget {
         title: const Text('Resolver doses atrasadas?'),
         content: Text(
           'Registrar ${overdue.length} dose${overdue.length > 1 ? 's' : ''} '
-          'como nao tomada${overdue.length > 1 ? 's' : ''}? '
-          'Ficarao no historico para relatorios.',
+          'como não tomada${overdue.length > 1 ? 's' : ''}? '
+          'Ficarão no histórico para relatórios.',
         ),
         actions: [
           TextButton(
@@ -295,7 +295,7 @@ class MedicamentosPage extends ConsumerWidget {
     if (error != null) {
       showAppSnack(context, error, variant: AppSnackVariant.error);
     } else {
-      showAppSuccessSnack(context, 'Doses registradas como nao tomadas.');
+      showAppSuccessSnack(context, 'Doses registradas como não tomadas.');
     }
   }
 
@@ -564,7 +564,7 @@ class MedicamentosPage extends ConsumerWidget {
     if (error != null) {
       showAppSnack(context, error, variant: AppSnackVariant.error);
     } else {
-      showAppSuccessSnack(context, 'Registrada como nao tomada.');
+      showAppSuccessSnack(context, 'Registrada como não tomada.');
     }
   }
 }

@@ -104,7 +104,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
               child: const ShellPageHeader(
-                title: 'Calendario',
+                title: 'Calendário',
                 subtitle: 'Consultas, medicamentos e compromissos.',
               ),
             ),
@@ -299,7 +299,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
       if (appointment == null) {
         showAppSnack(
           context,
-          'Consulta nao encontrada.',
+          'Consulta não encontrada.',
           variant: AppSnackVariant.error,
         );
         return;
@@ -312,7 +312,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
       if (patient == null) {
         showAppSnack(
           context,
-          'Paciente nao encontrado.',
+          'Paciente não encontrado.',
           variant: AppSnackVariant.error,
         );
         return;
@@ -335,7 +335,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
     final label = switch (event.type) {
       CalendarEventType.medicationDose => 'Gerencie doses na aba Medicamentos.',
       CalendarEventType.manual =>
-        'Compromissos manuais estarao disponiveis em versao futura.',
+        'Compromissos manuais estarão disponíveis em versão futura.',
       CalendarEventType.appointment => '',
     };
 
@@ -350,7 +350,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
     if (patient == null) {
       showAppSnack(
         context,
-        'Paciente nao encontrado.',
+        'Paciente não encontrado.',
         variant: AppSnackVariant.error,
       );
       return;
