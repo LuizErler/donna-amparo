@@ -61,10 +61,12 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
   final _instructionsController = TextEditingController();
   final _durationController = TextEditingController(text: '7');
   final _intervalController = TextEditingController(text: '8');
+  final _intervalDaysController = TextEditingController(text: '7');
 
   MedicationTreatmentType _treatmentType = MedicationTreatmentType.continuous;
   MedicationFrequencyPreset _frequency = MedicationFrequencyPreset.twiceDaily;
   DateTime _startDate = _today();
+  DateTime _anchorDate = _today();
   TimeOfDay _anchorTime = const TimeOfDay(hour: 8, minute: 0);
   List<TimeOfDay> _times = List.of(
     MedicationFrequencyPreset.twiceDaily.defaultTimes,
@@ -76,9 +78,11 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
   late final String _initialInstructions;
   late final String _initialDuration;
   late final String _initialInterval;
+  late final String _initialIntervalDays;
   late final MedicationTreatmentType _initialTreatmentType;
   late final MedicationFrequencyPreset _initialFrequency;
   late final DateTime _initialStartDate;
+  late final DateTime _initialAnchorDate;
   late final TimeOfDay _initialAnchorTime;
   late final List<TimeOfDay> _initialTimes;
 
@@ -106,6 +110,12 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
       if (med.scheduleMode == MedicationScheduleMode.interval) {
         _frequency = MedicationFrequencyPreset.interval;
         _intervalController.text = (med.intervalHours ?? 8).toString();
+        _anchorTime = _parseTime(med.anchorTime) ??
+            const TimeOfDay(hour: 8, minute: 0);
+      } else if (med.scheduleMode == MedicationScheduleMode.intervalDays) {
+        _frequency = MedicationFrequencyPreset.intervalDays;
+        _intervalDaysController.text = (med.intervalDays ?? 7).toString();
+        _anchorDate = med.anchorDate ?? med.startDate ?? _today();
         _anchorTime = _parseTime(med.anchorTime) ??
             const TimeOfDay(hour: 8, minute: 0);
       } else if (med.scheduleTimes.length == 1) {
@@ -137,9 +147,11 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
     _initialInstructions = _instructionsController.text;
     _initialDuration = _durationController.text;
     _initialInterval = _intervalController.text;
+    _initialIntervalDays = _intervalDaysController.text;
     _initialTreatmentType = _treatmentType;
     _initialFrequency = _frequency;
     _initialStartDate = _startDate;
+    _initialAnchorDate = _anchorDate;
     _initialAnchorTime = _anchorTime;
     _initialTimes = _times
         .map((t) => TimeOfDay(hour: t.hour, minute: t.minute))
@@ -166,9 +178,11 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
       _instructionsController.text != _initialInstructions ||
       _durationController.text != _initialDuration ||
       _intervalController.text != _initialInterval ||
+      _intervalDaysController.text != _initialIntervalDays ||
       _treatmentType != _initialTreatmentType ||
       _frequency != _initialFrequency ||
       !_sameDate(_startDate, _initialStartDate) ||
+      !_sameDate(_anchorDate, _initialAnchorDate) ||
       !_sameTime(_anchorTime, _initialAnchorTime) ||
       !_sameTimes(_times, _initialTimes);
 
@@ -219,15 +233,23 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
     _instructionsController.dispose();
     _durationController.dispose();
     _intervalController.dispose();
+    _intervalDaysController.dispose();
     super.dispose();
   }
 
-  bool get _isInterval => _frequency == MedicationFrequencyPreset.interval;
+  bool get _isIntervalHours =>
+      _frequency == MedicationFrequencyPreset.interval;
+
+  bool get _isIntervalDays =>
+      _frequency == MedicationFrequencyPreset.intervalDays;
 
   void _applyPreset(MedicationFrequencyPreset preset) {
     setState(() {
       _frequency = preset;
-      if (preset == MedicationFrequencyPreset.interval) return;
+      if (preset == MedicationFrequencyPreset.interval ||
+          preset == MedicationFrequencyPreset.intervalDays) {
+        return;
+      }
       if (preset != MedicationFrequencyPreset.custom) {
         _times = List.of(preset.defaultTimes);
       } else if (_times.isEmpty) {
@@ -236,9 +258,11 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
     });
   }
 
-  MedicationScheduleMode get _scheduleMode => _isInterval
-      ? MedicationScheduleMode.interval
-      : MedicationScheduleMode.fixedTimes;
+  MedicationScheduleMode get _scheduleMode {
+    if (_isIntervalHours) return MedicationScheduleMode.interval;
+    if (_isIntervalDays) return MedicationScheduleMode.intervalDays;
+    return MedicationScheduleMode.fixedTimes;
+  }
 
   Future<void> _pickStartDate() async {
     final picked = await showDatePicker(
@@ -252,6 +276,22 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
     if (picked != null) {
       setState(
           () => _startDate = DateTime(picked.year, picked.month, picked.day));
+    }
+  }
+
+  Future<void> _pickAnchorDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _anchorDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      locale: const Locale('pt', 'BR'),
+      helpText: 'Data da primeira dose',
+    );
+    if (picked != null) {
+      setState(
+        () => _anchorDate = DateTime(picked.year, picked.month, picked.day),
+      );
     }
   }
 
@@ -330,8 +370,20 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
   }
 
   int? _resolveIntervalHours() {
-    if (!_isInterval) return null;
+    if (!_isIntervalHours) return null;
     return int.tryParse(_intervalController.text.trim());
+  }
+
+  int? _resolveIntervalDays() {
+    if (!_isIntervalDays) return null;
+    return int.tryParse(_intervalDaysController.text.trim());
+  }
+
+  String _fmtDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   String _fmtTime(TimeOfDay t) {
@@ -343,10 +395,14 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
   List<String> _previewLabels() {
     final endDate = _resolveEndDate();
     final intervalHours = _resolveIntervalHours();
-    if (_isInterval && (intervalHours == null || intervalHours < 1)) {
+    final intervalDays = _resolveIntervalDays();
+    if (_isIntervalHours && (intervalHours == null || intervalHours < 1)) {
       return [];
     }
-    if (!_isInterval && _times.isEmpty) return [];
+    if (_isIntervalDays && (intervalDays == null || intervalDays < 1)) {
+      return [];
+    }
+    if (!_isIntervalHours && !_isIntervalDays && _times.isEmpty) return [];
 
     return MedicationDoseGenerator.previewLabels(
       scheduleMode: _scheduleMode,
@@ -354,17 +410,28 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
       endDate: endDate,
       scheduleTimes: _times.map(_fmtTime).toList(),
       intervalHours: intervalHours,
-      anchorTime: _isInterval ? _fmtTime(_anchorTime) : null,
+      anchorTime: (_isIntervalHours || _isIntervalDays)
+          ? _fmtTime(_anchorTime)
+          : null,
+      intervalDays: intervalDays,
+      anchorDate: _isIntervalDays ? _fmtDate(_anchorDate) : null,
+      previewDays: _isIntervalDays ? 21 : 3,
     );
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_isInterval) {
+    if (_isIntervalHours) {
       final hours = _resolveIntervalHours();
       if (hours == null || hours < 1) {
         _showSnack('Informe o intervalo em horas.', isError: true);
+        return;
+      }
+    } else if (_isIntervalDays) {
+      final days = _resolveIntervalDays();
+      if (days == null || days < 1) {
+        _showSnack('Informe o intervalo em dias.', isError: true);
         return;
       }
     } else if (_times.isEmpty) {
@@ -384,6 +451,8 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
     final dosage = _dosageController.text.trim();
     final instructions = _instructionsController.text.trim();
     final intervalHours = _resolveIntervalHours();
+    final intervalDays = _resolveIntervalDays();
+    final usesAnchorTime = _isIntervalHours || _isIntervalDays;
 
     String? error;
     if (widget.isEditing) {
@@ -400,7 +469,9 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
           endDate: endDate,
           scheduleMode: _scheduleMode,
           intervalHours: intervalHours,
-          anchorTime: _isInterval ? _anchorTime : null,
+          intervalDays: intervalDays,
+          anchorTime: usesAnchorTime ? _anchorTime : null,
+          anchorDate: _isIntervalDays ? _anchorDate : null,
         ),
       );
     } else {
@@ -416,7 +487,9 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
           endDate: endDate,
           scheduleMode: _scheduleMode,
           intervalHours: intervalHours,
-          anchorTime: _isInterval ? _anchorTime : null,
+          intervalDays: intervalDays,
+          anchorTime: usesAnchorTime ? _anchorTime : null,
+          anchorDate: _isIntervalDays ? _anchorDate : null,
         ),
       );
     }
@@ -611,7 +684,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                   );
                 }).toList(),
               ),
-              if (_isInterval) ...[
+              if (_isIntervalHours) ...[
                 const SizedBox(height: 14),
                 Row(
                   children: [
@@ -630,7 +703,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                         ],
                         onChanged: (_) => setState(() {}),
                         validator: (v) {
-                          if (!_isInterval) return null;
+                          if (!_isIntervalHours) return null;
                           final h = int.tryParse(v?.trim() ?? '');
                           if (h == null || h < 1) return 'Minimo 1 hora';
                           return null;
@@ -643,6 +716,66 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionTitle(context, 'Primeira dose'),
+                          const SizedBox(height: 6),
+                          _buildDateTile(
+                            context,
+                            label: _formatTime(_anchorTime),
+                            cardColor: cardColor,
+                            borderColor: borderColor,
+                            icon: Icons.access_time,
+                            onTap: _loading ? null : _pickAnchorTime,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (_isIntervalDays) ...[
+                const SizedBox(height: 14),
+                _buildField(
+                  context,
+                  label: 'Intervalo (dias)',
+                  hint: 'Ex.: 7',
+                  controller: _intervalDaysController,
+                  icon: Icons.date_range_outlined,
+                  cardColor: cardColor,
+                  borderColor: borderColor,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (_) => setState(() {}),
+                  validator: (v) {
+                    if (!_isIntervalDays) return null;
+                    final d = int.tryParse(v?.trim() ?? '');
+                    if (d == null || d < 1) return 'Minimo 1 dia';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle(context, 'Data da primeira dose'),
+                          const SizedBox(height: 6),
+                          _buildDateTile(
+                            context,
+                            label: _formatDate(_anchorDate),
+                            cardColor: cardColor,
+                            borderColor: borderColor,
+                            icon: Icons.calendar_today_outlined,
+                            onTap: _loading ? null : _pickAnchorDate,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle(context, 'Horario da dose'),
                           const SizedBox(height: 6),
                           _buildDateTile(
                             context,

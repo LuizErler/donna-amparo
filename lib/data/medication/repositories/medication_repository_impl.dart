@@ -83,7 +83,9 @@ class MedicationRepositoryImpl implements MedicationRepository {
       endDate: input.endDate,
       scheduleMode: input.scheduleMode,
       intervalHours: input.intervalHours,
+      intervalDays: input.intervalDays,
       anchorTime: _fmtTimeOpt(input.anchorTime),
+      anchorDate: _fmtDateOpt(input.anchorDate),
     );
   }
 
@@ -103,7 +105,9 @@ class MedicationRepositoryImpl implements MedicationRepository {
       endDate: input.endDate,
       scheduleMode: input.scheduleMode,
       intervalHours: input.intervalHours,
+      intervalDays: input.intervalDays,
       anchorTime: _fmtTimeOpt(input.anchorTime),
+      anchorDate: _fmtDateOpt(input.anchorDate),
     );
   }
 
@@ -136,12 +140,12 @@ class MedicationRepositoryImpl implements MedicationRepository {
   }
 
   List<String> _resolveScheduleTimes(CreateMedicationInput input) {
-    if (input.scheduleMode == MedicationScheduleMode.interval) return [];
+    if (input.scheduleMode != MedicationScheduleMode.fixedTimes) return [];
     return input.scheduleTimes.map(_fmtTime).toList();
   }
 
   List<String> _resolveScheduleTimesFromUpdate(UpdateMedicationInput input) {
-    if (input.scheduleMode == MedicationScheduleMode.interval) return [];
+    if (input.scheduleMode != MedicationScheduleMode.fixedTimes) return [];
     return input.scheduleTimes.map(_fmtTime).toList();
   }
 
@@ -154,5 +158,13 @@ class MedicationRepositoryImpl implements MedicationRepository {
   String? _fmtTimeOpt(TimeOfDay? time) {
     if (time == null) return null;
     return _fmtTime(time);
+  }
+
+  String? _fmtDateOpt(DateTime? date) {
+    if (date == null) return null;
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 }
