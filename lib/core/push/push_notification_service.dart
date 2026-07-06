@@ -47,6 +47,8 @@ class PushNotificationService {
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
 
   bool _initialized = false;
+  bool _permissionGranted = false;
+  Future<bool>? _permissionRequest;
   String? _cachedToken;
   String? _activeProfileId;
   String? _appVersion;
@@ -79,16 +81,47 @@ class PushNotificationService {
 
   Future<bool> requestPermission() async {
     if (!_initialized) return false;
+    if (_permissionGranted) return true;
 
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+    _permissionRequest ??= _requestPermissionOnce().whenComplete(() {
+      _permissionRequest = null;
+    });
+    return _permissionRequest!;
+  }
 
-    return settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional;
+  Future<bool> _requestPermissionOnce() async {
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final settings = await _messaging.getNotificationSettings();
+        if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional) {
+          _permissionGranted = true;
+          return true;
+        }
+      }
+
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+
+      _permissionGranted =
+          settings.authorizationStatus == AuthorizationStatus.authorized ||
+              settings.authorizationStatus == AuthorizationStatus.provisional;
+      return _permissionGranted;
+    } catch (error) {
+      debugPrint('Push permission request falhou: $error');
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final settings = await _messaging.getNotificationSettings();
+        _permissionGranted =
+            settings.authorizationStatus == AuthorizationStatus.authorized ||
+                settings.authorizationStatus == AuthorizationStatus.provisional;
+        return _permissionGranted;
+      }
+      return false;
+    }
   }
 
   Future<void> syncTokenForUser({
@@ -100,19 +133,24 @@ class PushNotificationService {
     _activeProfileId = profileId;
     _appVersion = appVersion;
 
-    final granted = await requestPermission();
-    if (!granted) return;
+    try {
+      final granted = await requestPermission();
+      if (!granted) return;
 
-    final token = await _messaging.getToken();
-    if (token == null || token.isEmpty) return;
+      final token = await _messaging.getToken();
+      if (token == null || token.isEmpty) return;
 
-    _cachedToken = token;
-    await _onRegisterToken(
-      profileId: profileId,
-      token: token,
-      platform: _platformCode,
-      appVersion: appVersion,
-    );
+      _cachedToken = token;
+      await _onRegisterToken(
+        profileId: profileId,
+        token: token,
+        platform: _platformCode,
+        appVersion: appVersion,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Push token sync falhou: $error');
+      debugPrint('$stackTrace');
+    }
   }
 
   Future<void> unregisterForUser({required String profileId}) async {
