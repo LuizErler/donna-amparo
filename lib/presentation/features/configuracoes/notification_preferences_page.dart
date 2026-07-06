@@ -5,6 +5,7 @@ import '../../../core/providers/notification_preferences_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/notification/entities/notification_category.dart';
 import '../../../domain/notification/entities/notification_preferences.dart';
+import '../../push/providers/push_providers.dart';
 
 class NotificationPreferencesPage extends ConsumerWidget {
   const NotificationPreferencesPage({super.key});
@@ -12,6 +13,7 @@ class NotificationPreferencesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(notificationPreferencesProvider);
+    final pushConfigured = ref.watch(pushPlatformEnabledProvider);
     final cardColor = AppTheme.cardSurface(context);
     final borderColor = AppTheme.cardOutline(context);
 
@@ -55,8 +57,9 @@ class NotificationPreferencesPage extends ConsumerWidget {
                   'Avisos push quando o app está fechado ou em segundo plano.',
             ),
             const SizedBox(height: 12),
-            _buildPushInfoBanner(context, cardColor, borderColor),
-            const SizedBox(height: 12),
+            if (!pushConfigured)
+              _buildPushInfoBanner(context, cardColor, borderColor),
+            if (!pushConfigured) const SizedBox(height: 12),
             _buildPreferenceCard(
               context,
               cardColor: cardColor,
@@ -146,7 +149,7 @@ class NotificationPreferencesPage extends ConsumerWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'As notificações push serão ativadas em breve. '
+              'Configure o Firebase no app para ativar push. '
               'Suas preferências já ficam salvas neste aparelho.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),

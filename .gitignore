@@ -48,3 +48,4 @@ app.*.map.json
 .env
 dart_defines.local.json
 dart_defines.json
+android/app/google-services.json

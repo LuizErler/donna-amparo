@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/push/push_navigation.dart';
 import '../features/alertas/alertas_page.dart';
 import '../features/calendario/calendario_page.dart';
 import '../features/consultas/consultas_page.dart';
 import '../features/home/home_page.dart';
 import '../features/medicamentos/medicamentos_page.dart';
 
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends ConsumerStatefulWidget {
   const MainNavigation({super.key});
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  ConsumerState<MainNavigation> createState() => _MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
+class _MainNavigationState extends ConsumerState<MainNavigation> {
   int _selectedIndex = 0;
 
   static const List<Widget> _pages = [
@@ -46,6 +48,12 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<PushNavigationTarget?>(pushNavigationTargetProvider, (_, next) {
+      if (next == null) return;
+      setState(() => _selectedIndex = next.tabIndex);
+      ref.read(pushNavigationTargetProvider.notifier).state = null;
+    });
+
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,

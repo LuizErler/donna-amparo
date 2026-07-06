@@ -5,6 +5,7 @@ import '../../core/config/app_config.dart';
 import '../care/invite/pending_invite_gate.dart';
 import '../care/providers/care_providers.dart';
 import '../onboarding/screens/patient_onboarding_screen.dart';
+import '../push/widgets/push_notification_listener.dart';
 import 'providers/auth_providers.dart';
 import 'screens/login_screen.dart';
 import 'screens/set_password_screen.dart';
@@ -41,7 +42,9 @@ class AuthGate extends ConsumerWidget {
         }
 
         return PendingInviteGate(
-          child: const _PostAuthFlow(),
+          child: const PushNotificationListener(
+            child: _PostAuthFlow(),
+          ),
         );
       },
     );
