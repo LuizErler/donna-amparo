@@ -11,6 +11,7 @@ import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
 import '../../profile/screens/profile_edit_screen.dart';
 import '../../shell/shell_page_header.dart';
+import 'notification_preferences_page.dart';
 
 class ConfiguracoesPage extends ConsumerStatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -129,8 +130,13 @@ class _ConfiguracoesPageState extends ConsumerState<ConfiguracoesPage> {
           borderColor: borderColor,
           icone: Icons.notifications_outlined,
           titulo: 'Notificações',
-          subtitulo: 'Alertas, lembretes e avisos',
-          onTap: () {},
+          subtitulo: 'Alertas no app e avisos push por categoria',
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const NotificationPreferencesPage(),
+            ),
+          ),
         ),
         const SizedBox(height: 10),
         _buildItem(

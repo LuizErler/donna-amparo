@@ -579,7 +579,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
                 const SizedBox(height: 20),
               _buildField(
                 context,
-                label: 'Nome do medicamento',
+                label: 'Inserir medicamento',
                 hint: 'Ex.: Losartana',
                 controller: _nameController,
                 icon: Icons.medication_outlined,
@@ -601,8 +601,8 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
               const SizedBox(height: 14),
               _buildField(
                 context,
-                label: 'Instruções (opcional)',
-                hint: 'Ex.: Tomar apos o cafe',
+                label: 'Orientações (opcional)',
+                hint: 'Ex.: Tomar após o café da manhã',
                 controller: _instructionsController,
                 icon: Icons.notes_outlined,
                 cardColor: cardColor,
@@ -947,7 +947,7 @@ class _MedicationFormSheetState extends ConsumerState<_MedicationFormSheet> {
             child: Icon(
               Icons.close,
               size: 22,
-              color: AppTheme.textSecondary,
+              color: AppTheme.onSurfaceSecondary(context),
             ),
           ),
         ),

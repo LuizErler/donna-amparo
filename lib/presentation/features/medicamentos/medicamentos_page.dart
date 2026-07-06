@@ -153,14 +153,18 @@ class MedicamentosPage extends ConsumerWidget {
           ),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(
+            child: OutlinedButton.icon(
               onPressed: () => _openGerenciar(context),
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              icon: const Icon(Icons.settings_outlined, size: 18),
+              label: const Text('Gerenciar medicamentos'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primary,
+                side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Gerenciar medicamentos'),
             ),
           ),
           const SizedBox(height: 16),
