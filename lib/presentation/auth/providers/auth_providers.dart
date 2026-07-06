@@ -15,6 +15,7 @@ import '../../../domain/auth/usecases/sign_up.dart';
 import '../../../domain/auth/usecases/update_password.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
+import '../../push/providers/push_providers.dart';
 
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
   return AuthRemoteDataSource();
@@ -225,6 +226,11 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
 
 /// Encerra sessao Supabase e limpa cache de perfil/paciente.
 Future<String?> performSignOut(WidgetRef ref) async {
+  final profileId = ref.read(currentProfileProvider).valueOrNull?.id;
+  if (profileId != null) {
+    await unregisterPushTokenForProfile(ref, profileId: profileId);
+  }
+
   final error = await ref.read(authControllerProvider.notifier).signOut();
   ref.invalidate(currentProfileProvider);
   ref.invalidate(activePatientProvider);
