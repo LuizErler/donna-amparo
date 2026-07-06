@@ -7,7 +7,7 @@ import '../entities/medication_summary.dart';
 
 enum MedicationTreatmentType {
   continuous('Uso contínuo'),
-  limited('Tratamento com prazo');
+  limited('Tratamento por tempo determinado');
 
   const MedicationTreatmentType(this.label);
 

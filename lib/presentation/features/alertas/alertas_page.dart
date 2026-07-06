@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/providers/notification_preferences_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../domain/notification/entities/notification_category.dart';
 import '../../shell/shell_page_header.dart';
 
-class AlertasPage extends StatefulWidget {
+class AlertasPage extends ConsumerStatefulWidget {
   const AlertasPage({super.key});
 
   @override
-  State<AlertasPage> createState() => _AlertasPageState();
+  ConsumerState<AlertasPage> createState() => _AlertasPageState();
 }
 
-class _AlertasPageState extends State<AlertasPage> {
+class _AlertasPageState extends ConsumerState<AlertasPage> {
   String _filtroSelecionado = 'Todas';
 
   static const List<String> _filtros = [
@@ -78,14 +82,26 @@ class _AlertasPageState extends State<AlertasPage> {
   ];
 
   List<_Alerta> _filtrar(List<_Alerta> lista) {
-    if (_filtroSelecionado == 'Todas') return lista;
-    return lista.where((a) => a.categoria == _filtroSelecionado).toList();
+    final preferences = ref.watch(notificationPreferencesProvider);
+
+    final habilitados = lista.where((alerta) {
+      final category = NotificationCategory.fromFilterLabel(alerta.categoria);
+      if (category == null) return true;
+      return preferences.isAlertEnabled(category);
+    });
+
+    if (_filtroSelecionado == 'Todas') return habilitados.toList();
+    return habilitados
+        .where((alerta) => alerta.categoria == _filtroSelecionado)
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final atencaoFiltrado = _filtrar(_atencao);
     final resolvidosFiltrado = _filtrar(_resolvidos);
+    final nenhumAlerta =
+        atencaoFiltrado.isEmpty && resolvidosFiltrado.isEmpty;
 
     return Scaffold(
       body: SafeArea(
@@ -98,20 +114,24 @@ class _AlertasPageState extends State<AlertasPage> {
               const SizedBox(height: 20),
               _buildFiltros(context),
               const SizedBox(height: 28),
-              if (atencaoFiltrado.isNotEmpty) ...[
-                _buildSecaoAlertas(
-                  context,
-                  titulo: 'Atenção (${atencaoFiltrado.length})',
-                  alertas: atencaoFiltrado,
-                ),
-                const SizedBox(height: 28),
+              if (nenhumAlerta)
+                _buildEmptyState(context)
+              else ...[
+                if (atencaoFiltrado.isNotEmpty) ...[
+                  _buildSecaoAlertas(
+                    context,
+                    titulo: 'Atenção (${atencaoFiltrado.length})',
+                    alertas: atencaoFiltrado,
+                  ),
+                  const SizedBox(height: 28),
+                ],
+                if (resolvidosFiltrado.isNotEmpty)
+                  _buildSecaoAlertas(
+                    context,
+                    titulo: 'Resolvidos (${resolvidosFiltrado.length})',
+                    alertas: resolvidosFiltrado,
+                  ),
               ],
-              if (resolvidosFiltrado.isNotEmpty)
-                _buildSecaoAlertas(
-                  context,
-                  titulo: 'Resolvidos (${resolvidosFiltrado.length})',
-                  alertas: resolvidosFiltrado,
-                ),
             ],
           ),
         ),
@@ -123,6 +143,39 @@ class _AlertasPageState extends State<AlertasPage> {
     return const ShellPageHeader(
       title: 'Alertas da Família',
       subtitle: 'Pendências e itens resolvidos.',
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardSurface(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.cardOutline(context)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.notifications_off_outlined,
+            color: AppTheme.onSurfaceSecondary(context),
+            size: 32,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Nenhum alerta visível',
+            style: Theme.of(context).textTheme.titleMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Ajuste as categorias em Perfil → Notificações → Alertas no app.',
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
