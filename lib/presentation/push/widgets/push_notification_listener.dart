@@ -28,7 +28,10 @@ class _PushNotificationListenerState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncIfNeeded());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Deixa a UI pintar antes de inicializar FCM (evita tela preta no emulador).
+      Future<void>.delayed(const Duration(milliseconds: 800), _syncIfNeeded);
+    });
   }
 
   Future<void> _syncIfNeeded() async {

@@ -31,6 +31,9 @@ flutterfire configure
 
 e transcreva os valores para os defines (evita commitar `google-services.json`).
 
+Para Android, copie também `google-services.json` para `android/app/` (arquivo gitignored).
+O plugin Gradle `com.google.gms.google-services` precisa dele para FCM estável.
+
 ## 3. Supabase
 
 Aplique a migration `011_push_notifications_platform.sql`.
