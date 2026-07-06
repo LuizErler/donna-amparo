@@ -44,7 +44,7 @@ class PushNotificationService {
 
   final void Function(RemoteMessage message) _onMessageOpened;
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
 
   bool _initialized = false;
   String? _cachedToken;
@@ -60,7 +60,11 @@ class PushNotificationService {
     if (!DefaultFirebaseOptions.isConfigured || _initialized) return;
     if (kIsWeb) return;
 
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
     _initialized = true;
 
     _tokenRefreshSub = _messaging.onTokenRefresh.listen(_handleTokenRefresh);
