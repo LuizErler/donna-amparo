@@ -69,27 +69,8 @@ ALTER TABLE public.notification_jobs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "notification_jobs_select_own" ON public.notification_jobs
   FOR SELECT USING (auth.uid() = profile_id);
 
--- Inbox in-app por cuidador
-CREATE TABLE public.notifications (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id   uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  patient_id   uuid REFERENCES public.patients(id) ON DELETE CASCADE,
-  type         text NOT NULL,
-  title        text NOT NULL,
-  body         text NOT NULL,
-  data         jsonb NOT NULL DEFAULT '{}'::jsonb,
-  read_at      timestamptz,
-  created_at   timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS notifications_profile_created_idx
-  ON public.notifications (profile_id, created_at DESC);
-
-COMMENT ON TABLE public.notifications IS
-  'Inbox in-app de alertas entregues ao cuidador.';
-
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-
--- Policies de 001 assumiam tabela existente; reforcamos insert para service role futuro.
+-- Inbox in-app: tabela legada ja existia (id bigint, read boolean).
+-- Evolucao de schema (read_at, data jsonb) fica para migration futura.
+DROP POLICY IF EXISTS "notifications_insert_own" ON public.notifications;
 CREATE POLICY "notifications_insert_own" ON public.notifications
   FOR INSERT WITH CHECK (auth.uid() = profile_id);
