@@ -3,7 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/notification_preferences_provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../domain/notification/entities/notification_category.dart';
+import '../../../domain/alert/entities/family_alert.dart';
+import '../../../domain/alert/entities/family_alerts_result.dart';
+import '../../alertas/providers/alerts_providers.dart';
+import '../../appointment/providers/appointment_providers.dart';
+import '../../hydration/providers/hydration_providers.dart';
+import '../../medication/providers/medication_providers.dart';
+import '../../shared/refresh_providers.dart';
+import '../../shared/widgets/async_state_view.dart';
+import '../../shared/widgets/pull_to_refresh_scroll_view.dart';
 import '../../shell/shell_page_header.dart';
 
 class AlertasPage extends ConsumerStatefulWidget {
@@ -25,115 +33,66 @@ class _AlertasPageState extends ConsumerState<AlertasPage> {
     'Família',
   ];
 
-  static const List<_Alerta> _atencao = [
-    _Alerta(
-      titulo: 'Losartana das 20h ainda não confirmada',
-      descricao:
-          'O Sr. Joaquim ainda não tomou o medicamento das 20h. Alguém pode verificar?',
-      hora: '20:42',
-      icone: Icons.medication_outlined,
-      categoria: 'Medicamentos',
-      resolvido: false,
-    ),
-    _Alerta(
-      titulo: 'Consulta de Cardiologia se aproxima',
-      descricao: 'Quinta, 19 de junho às 10:30 com a Dra. Helena Vasconcelos.',
-      hora: 'Hoje, 09:00',
-      icone: Icons.calendar_today_outlined,
-      categoria: 'Consultas',
-      resolvido: false,
-    ),
-    _Alerta(
-      titulo: 'Lembrete de hidratação',
-      descricao:
-          'Sr. Joaquim não registra ingestão de água há mais de 2 horas. Oferecer um copo agora ajuda a manter o ritmo do dia.',
-      hora: '19:45',
-      icone: Icons.water_drop_outlined,
-      categoria: 'Hidratação',
-      resolvido: false,
-    ),
-  ];
-
-  static const List<_Alerta> _resolvidos = [
-    _Alerta(
-      titulo: 'Pressão arterial dentro do esperado',
-      descricao: 'Karina registrou 128 x 82 mmHg às 14:30.',
-      hora: '14:30',
-      icone: Icons.check_circle_outline,
-      categoria: 'Vitais',
-      resolvido: true,
-    ),
-    _Alerta(
-      titulo: 'Rafael entrou no Círculo Familiar',
-      descricao: 'Convite aceito. Papel definido como observador.',
-      hora: 'Ontem',
-      icone: Icons.check_circle_outline,
-      categoria: 'Família',
-      resolvido: true,
-    ),
-    _Alerta(
-      titulo: 'Metformina das 19h confirmada',
-      descricao: 'Karina registrou a confirmação às 19:00.',
-      hora: '19:00',
-      icone: Icons.check_circle_outline,
-      categoria: 'Medicamentos',
-      resolvido: true,
-    ),
-  ];
-
-  List<_Alerta> _filtrar(List<_Alerta> lista) {
+  List<FamilyAlert> _filtrar(List<FamilyAlert> lista) {
     final preferences = ref.watch(notificationPreferencesProvider);
 
     final habilitados = lista.where((alerta) {
-      final category = NotificationCategory.fromFilterLabel(alerta.categoria);
-      if (category == null) return true;
-      return preferences.isAlertEnabled(category);
+      return preferences.isAlertEnabled(alerta.category);
     });
 
     if (_filtroSelecionado == 'Todas') return habilitados.toList();
     return habilitados
-        .where((alerta) => alerta.categoria == _filtroSelecionado)
+        .where((alerta) => alerta.filterLabel == _filtroSelecionado)
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final atencaoFiltrado = _filtrar(_atencao);
-    final resolvidosFiltrado = _filtrar(_resolvidos);
-    final nenhumAlerta =
-        atencaoFiltrado.isEmpty && resolvidosFiltrado.isEmpty;
+    final alertsAsync = ref.watch(familyAlertsProvider);
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 20),
-              _buildFiltros(context),
-              const SizedBox(height: 28),
-              if (nenhumAlerta)
-                _buildEmptyState(context)
-              else ...[
-                if (atencaoFiltrado.isNotEmpty) ...[
-                  _buildSecaoAlertas(
-                    context,
-                    titulo: 'Atenção (${atencaoFiltrado.length})',
-                    alertas: atencaoFiltrado,
-                  ),
+        child: AsyncStateView<FamilyAlertsResult>(
+          value: alertsAsync,
+          errorFallback: 'Não foi possível carregar os alertas.',
+          data: (result) {
+            final atencaoFiltrado = _filtrar(result.attention);
+            final resolvidosFiltrado = _filtrar(result.resolved);
+            final nenhumAlerta =
+                atencaoFiltrado.isEmpty && resolvidosFiltrado.isEmpty;
+
+            return PullToRefreshScrollView(
+              onRefresh: _refreshAlerts,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context),
+                  const SizedBox(height: 20),
+                  _buildFiltros(context),
                   const SizedBox(height: 28),
+                  if (nenhumAlerta)
+                    _buildEmptyState(context)
+                  else ...[
+                    if (atencaoFiltrado.isNotEmpty) ...[
+                      _buildSecaoAlertas(
+                        context,
+                        titulo: 'Atenção (${atencaoFiltrado.length})',
+                        alertas: atencaoFiltrado,
+                      ),
+                      const SizedBox(height: 28),
+                    ],
+                    if (resolvidosFiltrado.isNotEmpty)
+                      _buildSecaoAlertas(
+                        context,
+                        titulo: 'Resolvidos (${resolvidosFiltrado.length})',
+                        alertas: resolvidosFiltrado,
+                      ),
+                  ],
                 ],
-                if (resolvidosFiltrado.isNotEmpty)
-                  _buildSecaoAlertas(
-                    context,
-                    titulo: 'Resolvidos (${resolvidosFiltrado.length})',
-                    alertas: resolvidosFiltrado,
-                  ),
-              ],
-            ],
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -164,13 +123,13 @@ class _AlertasPageState extends ConsumerState<AlertasPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Nenhum alerta visível',
+            'Nenhum alerta no momento',
             style: Theme.of(context).textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
           Text(
-            'Ajuste as categorias em Perfil → Notificações → Alertas no app.',
+            'Quando houver pendências de medicamentos, hidratação ou consultas, elas aparecerão aqui. Ajuste as categorias em Perfil → Notificações.',
             style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -224,7 +183,7 @@ class _AlertasPageState extends ConsumerState<AlertasPage> {
   Widget _buildSecaoAlertas(
     BuildContext context, {
     required String titulo,
-    required List<_Alerta> alertas,
+    required List<FamilyAlert> alertas,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,23 +191,23 @@ class _AlertasPageState extends ConsumerState<AlertasPage> {
         Text(titulo, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
         ...alertas.map(
-          (a) => Padding(
+          (alerta) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: _buildCardAlerta(context, a),
+            child: _buildCardAlerta(context, alerta),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCardAlerta(BuildContext context, _Alerta alerta) {
-    final corIcone = alerta.resolvido
+  Widget _buildCardAlerta(BuildContext context, FamilyAlert alerta) {
+    final corIcone = alerta.resolved
         ? AppTheme.successForeground(context)
         : AppTheme.primary;
-    final corFundo = alerta.resolvido
+    final corFundo = alerta.resolved
         ? AppTheme.successSurface(context)
         : AppTheme.cardSurface(context);
-    final corBorda = alerta.resolvido
+    final corBorda = alerta.resolved
         ? AppTheme.successBorder(context)
         : AppTheme.cardOutline(context);
 
@@ -268,7 +227,7 @@ class _AlertasPageState extends ConsumerState<AlertasPage> {
               color: corIcone.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(alerta.icone, color: corIcone, size: 18),
+            child: Icon(alerta.icon, color: corIcone, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -276,19 +235,19 @@ class _AlertasPageState extends ConsumerState<AlertasPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  alerta.titulo,
+                  alerta.title,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  alerta.descricao,
+                  alerta.description,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  alerta.hora,
+                  alerta.timeLabel,
                   style: Theme.of(context).textTheme.labelMedium,
                 ),
               ],
@@ -300,19 +259,11 @@ class _AlertasPageState extends ConsumerState<AlertasPage> {
   }
 }
 
-class _Alerta {
-  final String titulo;
-  final String descricao;
-  final String hora;
-  final IconData icone;
-  final String categoria;
-  final bool resolvido;
-  const _Alerta({
-    required this.titulo,
-    required this.descricao,
-    required this.hora,
-    required this.icone,
-    required this.categoria,
-    required this.resolvido,
-  });
+Future<void> _refreshAlerts(WidgetRef ref) async {
+  await refreshFutureProviders(ref, [
+    medicationDosesProvider,
+    hydrationStatusProvider,
+    patientAppointmentsProvider,
+  ]);
+  ref.invalidate(familyAlertsProvider);
 }
