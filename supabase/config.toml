@@ -1,0 +1,8 @@
+# Supabase local / deploy — https://supabase.com/docs/guides/cli/config
+project_id = "ufbyjvkuluyaxgqoubpm"
+
+[functions.process-notification-jobs]
+verify_jwt = false
+
+[functions.send-push]
+verify_jwt = true
