@@ -13,6 +13,8 @@ import '../../calendar/calendar_event_mapper.dart';
 import '../../calendar/providers/calendar_providers.dart';
 import '../../care/providers/care_providers.dart';
 import '../../care/providers/care_team_providers.dart';
+import '../../medication/medication_dose_detail_sheet.dart';
+import '../../medication/providers/medication_providers.dart';
 import '../../shared/app_snackbar.dart';
 import '../../shell/shell_page_header.dart';
 import 'mock_calendar_events.dart';
@@ -174,6 +176,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
                                   context,
                                   event,
                                   appointments,
+                                  medicationDoses,
                                 ),
                               );
                             },
@@ -301,6 +304,7 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
     BuildContext context,
     CalendarEvent event,
     List<Appointment> appointments,
+    List<MedicationDose> medicationDoses,
   ) async {
     if (event.type == CalendarEventType.appointment) {
       final id = int.tryParse(event.sourceId ?? '');
@@ -349,11 +353,53 @@ class _CalendarioPageState extends ConsumerState<CalendarioPage> {
       return;
     }
 
+    if (event.type == CalendarEventType.medicationDose) {
+      final dose =
+          CalendarEventMapper.findDoseForEvent(medicationDoses, event);
+      if (dose == null) {
+        showAppSnack(
+          context,
+          'Dose não encontrada.',
+          variant: AppSnackVariant.error,
+        );
+        return;
+      }
+
+      final role = await ref.read(currentCareRoleProvider.future);
+      final canToggle = role?.canLogDosesAndVitals ?? false;
+      final canManage = role?.canCreateMedsAndAppointments ?? false;
+      final patient = await ref.read(activePatientProvider.future);
+      if (!context.mounted) return;
+      if (patient == null) {
+        showAppSnack(
+          context,
+          'Paciente não encontrado.',
+          variant: AppSnackVariant.error,
+        );
+        return;
+      }
+
+      final changed = await showMedicationDoseDetailSheet(
+        context,
+        ref,
+        patientId: patient.id,
+        dose: dose,
+        canToggle: canToggle,
+        canManage: canManage,
+      );
+      if (!context.mounted || changed != true) return;
+      showAppSuccessSnack(context, 'Dose atualizada.');
+      final monthKey = calendarMonthKey(_focusedDay);
+      ref.invalidate(medicationCalendarDosesProvider(monthKey));
+      ref.invalidate(medicationDosesProvider);
+      return;
+    }
+
     final label = switch (event.type) {
-      CalendarEventType.medicationDose => 'Gerencie doses na aba Medicamentos.',
       CalendarEventType.manual =>
         'Compromissos manuais estarão disponíveis em versão futura.',
       CalendarEventType.appointment => '',
+      CalendarEventType.medicationDose => '',
     };
 
     ScaffoldMessenger.of(context).showSnackBar(
