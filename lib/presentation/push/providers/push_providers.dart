@@ -44,7 +44,9 @@ final pushNotificationServiceProvider = Provider<PushNotificationService>((ref) 
       return repository.deleteToken(profileId: profileId, token: token);
     },
     onMessageOpened: (message) {
-      final target = resolvePushNavigationTarget(message.data);
+      final target = resolvePushNavigationTarget(
+        Map<String, dynamic>.from(message.data),
+      );
       if (target != null) {
         ref.read(pushNavigationTargetProvider.notifier).state = target;
       }
