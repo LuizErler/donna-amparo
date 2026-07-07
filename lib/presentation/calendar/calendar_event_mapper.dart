@@ -73,4 +73,15 @@ class CalendarEventMapper {
         })
         .toList();
   }
+
+  static MedicationDose? findDoseForEvent(
+    List<MedicationDose> doses,
+    CalendarEvent event,
+  ) {
+    if (event.type != CalendarEventType.medicationDose) return null;
+    for (final dose in doses) {
+      if (fromMedicationDose(dose).id == event.id) return dose;
+    }
+    return null;
+  }
 }

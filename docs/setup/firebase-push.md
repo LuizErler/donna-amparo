@@ -31,8 +31,8 @@ flutterfire configure
 
 e transcreva os valores para os defines (evita commitar `google-services.json`).
 
-Para Android, copie também `google-services.json` para `android/app/` (arquivo gitignored).
-O plugin Gradle `com.google.gms.google-services` precisa dele para FCM estável.
+Para Android, copie também `google-services.json` para `android/app/` (ver `google-services.json.example`).
+O plugin Gradle só é aplicado quando esse arquivo existir — sem ele o app compila, mas push nativo não funciona.
 
 ## 3. Supabase
 
