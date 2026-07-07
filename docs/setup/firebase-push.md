@@ -60,5 +60,5 @@ Payload sugerido (deep link):
 
 ## Próximas fases
 
-- Edge Functions `send-push` + `process-notification-jobs` (#122)
+- Edge Functions `send-push` + `process-notification-jobs` — ver [edge-functions-push.md](edge-functions-push.md) (#122)
 - Plug-in consultas (#101)
